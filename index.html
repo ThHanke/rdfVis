@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Interactive RDF Graph Visualizer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Global layout styles */
+      body {
+        overflow: hidden;
+      }
+      #graphContainer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 250px; /* width of sidebar */
+        right: 0;
+      }
+      #sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 250px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        padding: 15px;
+      }
+      @media (max-width: 768px) {
+        #sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
+        }
+        #graphContainer {
+          left: 0;
+          top: auto;
+          height: 70vh;
+        }
+      }
+      /* Legend styling – fixed to upper right of the viewport */
+      #legend {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 220px;
+        z-index: 1000;
+        cursor: move;
+      }
+      #legend .legend-item {
+        display: flex;
+        flex-direction: column;
+        padding: 2px 5px;
+        border-bottom: 1px solid #eee;
+      }
+      #legend .legend-item:last-child {
+        border-bottom: none;
+      }
+      #legend .legend-color {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 5px;
+        border: 1px solid #000;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar with controls -->
+    <div id="sidebar">
+      <h5>RDF Graph Visualizer</h5>
+      <hr />
+      <!-- Input Source -->
+      <div class="mb-3">
+        <label class="form-label">Input Source</label>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
+          <label class="form-check-label" for="fileInputRadio">Load from File</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
+          <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
+        </div>
+      </div>
+      <!-- File Input Section -->
+      <div id="fileSection" class="mb-3">
+        <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
+        <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
+      </div>
+      <!-- SPARQL Input Section -->
+      <div id="sparqlSection" class="mb-3" style="display: none;">
+        <div class="mb-2">
+          <label for="endpointUrl" class="form-label">Endpoint URL:</label>
+          <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
+        </div>
+        <div class="mb-2">
+          <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
+          <textarea id="sparqlQuery" class="form-control" rows="3">
+CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
+          </textarea>
+        </div>
+        <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
+      </div>
+      <hr />
+      <!-- Layout & Display Options -->
+      <div class="mb-3">
+        <h6>Layout Options</h6>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
+          <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
+        </div>
+        <div class="mb-2">
+          <label for="layoutType" class="form-label">Layout Type:</label>
+          <select id="layoutType" class="form-select form-select-sm">
+            <option value="force" selected>Force Directed</option>
+            <option value="hierarchical">Hierarchical</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label for="connectionStyle" class="form-label">Connection Style:</label>
+          <select id="connectionStyle" class="form-select form-select-sm">
+            <option value="curved" selected>Curved</option>
+            <option value="straight">Straight</option>
+          </select>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="enablePhysics" checked />
+          <label class="form-check-label" for="enablePhysics">Enable Physics</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
+          <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
+          <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mt-2">
+          <button id="applyLayoutButton" class="btn btn-secondary btn-sm">Apply Layout</button>
+          <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
+          <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
+          <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
+        </div>
+      </div>
+      <hr />
+      <div id="errorContainer" class="text-danger"></div>
+    </div>
+
+    <!-- Graph Container -->
+    <div id="graphContainer"></div>
+
+    <!-- Moveable Legend Box -->
+    <div id="legend" class="card">
+      <div class="card-header">Legend</div>
+      <ul class="list-group list-group-flush" id="legendList"></ul>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Import vis-network -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Import rdflib -->
+    <script src="https://unpkg.com/rdflib@2.2.4/dist/rdflib.min.js"></script>
+
+    <script>
+      // Global variables for vis DataSets and network instance.
+      var networkNodes = null;
+      var networkEdges = null;
+      var network = null;
+
+      // Global rdflib store.
+      var store = $rdf.graph();
+
+      // Global prefix mapping (prefix -> namespace) and auto-assigned counter.
+      var knownPrefixes = {
+        rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        rdfs: "http://www.w3.org/2000/01/rdf-schema#",
+        xsd: "http://www.w3.org/2001/XMLSchema#"
+      };
+      var generatedPrefixCounter = 1;
+
+      // Global mapping from prefix to color (for the legend).
+      var prefixColorMapping = {};
+
+      // Keep track of each node's expansion state and base (shortened) label.
+      var nodeState = {}; // nodeState[nodeId] = { expanded: true/false, baseLabel: "shortened label" }
+
+      // Utility functions for error messages.
+      function showError(message) {
+        document.getElementById("errorContainer").innerText = message;
+      }
+      function clearError() {
+        document.getElementById("errorContainer").innerText = "";
+      }
+
+      // Toggle between file and SPARQL input sections.
+      document.getElementById("fileInputRadio").addEventListener("change", function () {
+        document.getElementById("fileSection").style.display = "block";
+        document.getElementById("sparqlSection").style.display = "none";
+      });
+      document.getElementById("sparqlInputRadio").addEventListener("change", function () {
+        document.getElementById("fileSection").style.display = "none";
+        document.getElementById("sparqlSection").style.display = "block";
+      });
+
+      // Updated shortenURI: if the URI starts with the base (if defined), return "base:".
+      function shortenURI(uri) {
+        if (knownPrefixes["base"] && uri.indexOf(knownPrefixes["base"]) === 0) {
+          return "base:" + uri.substring(knownPrefixes["base"].length);
+        }
+        // Use Object.entries so that an empty key is treated as "base".
+        var entries = Object.entries(knownPrefixes).map(function ([p, ns]) {
+          return { prefix: (p === "" ? "base" : p), ns: ns };
+        });
+        entries.sort(function(a, b) { return b.ns.length - a.ns.length; });
+        for (var i = 0; i < entries.length; i++) {
+          var prefix = entries[i].prefix;
+          var ns = entries[i].ns;
+          if (uri.indexOf(ns) === 0) {
+            return prefix + ":" + uri.substring(ns.length);
+          }
+        }
+        var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
+        if (idx === -1) return uri;
+        var ns = uri.substring(0, idx + 1);
+        var local = uri.substring(idx + 1);
+        for (var key in knownPrefixes) {
+          if (knownPrefixes[key] === ns) {
+            var pfx = (key === "" ? "base" : key);
+            return pfx + ":" + local;
+          }
+        }
+        var newPrefix = "ns" + generatedPrefixCounter++;
+        knownPrefixes[newPrefix] = ns;
+        return newPrefix + ":" + local;
+      }
+
+      // Given a label, shorten it if it appears to be a URI.
+      function shortenLabel(label) {
+        if (label.startsWith("http://") || label.startsWith("https://")) {
+          return shortenURI(label);
+        }
+        return label;
+      }
+
+      // Parse RDF data (assumed Turtle) using rdflib.
+      function parseRDF(data, baseUrl, contentType) {
+        return new Promise(function (resolve, reject) {
+          store = $rdf.graph(); // reset store
+          // Clear knownPrefixes (but keep defaults).
+          knownPrefixes = {
+            rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            rdfs: "http://www.w3.org/2000/01/rdf-schema#",
+            xsd: "http://www.w3.org/2001/XMLSchema#"
+          };
+          $rdf.parse(data, store, baseUrl, contentType, function (err, kb) {
+            if (err) {
+              reject(err);
+            } else {
+              if (store.namespaces) {
+                // If an empty prefix is declared, store it as "base".
+                if (store.namespaces[""]) {
+                  knownPrefixes["base"] = store.namespaces[""];
+                }
+                for (var p in store.namespaces) {
+                  if (p === "" || p === "base") {
+                    knownPrefixes["base"] = store.namespaces[p];
+                  } else if (!knownPrefixes[p]) {
+                    knownPrefixes[p] = store.namespaces[p];
+                  }
+                }
+              }
+              resolve(store);
+            }
+          });
+        });
+      }
+
+      // Build graph (nodes and edges) from the rdflib store.
+      function buildGraphFromStore(store) {
+        var nodesMap = {};
+        var edges = [];
+        var edgeIdCounter = 0;
+        store.statements.forEach(function (st) {
+          var subj = st.subject.value;
+          var pred = st.predicate.value;
+          var obj = st.object.termType === "Literal" ? st.object.value : st.object.value;
+          if (pred === "http://www.w3.org/2000/01/rdf-schema#label") {
+            if (!nodesMap[subj]) {
+              nodesMap[subj] = { id: subj, label: st.object.value };
+            } else {
+              nodesMap[subj].label = st.object.value;
+            }
+          } else if (pred === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
+            if (!nodesMap[subj]) { nodesMap[subj] = { id: subj }; }
+            nodesMap[subj].type = st.object.value;
+          } else {
+            if (!nodesMap[subj]) { nodesMap[subj] = { id: subj, label: subj }; }
+            if (!nodesMap[obj]) {
+              nodesMap[obj] = st.object.termType === "Literal" ?
+                { id: obj, label: st.object.value, literal: true } :
+                { id: obj, label: obj };
+            }
+            edges.push({
+              id: "edge-" + edgeIdCounter++,
+              from: subj,
+              to: obj,
+              label: shortenLabel(st.predicate.value),
+              arrows: { to: { enabled: true, type: "arrow" } }
+            });
+          }
+        });
+        for (var id in nodesMap) {
+          if (!nodesMap[id].label) { nodesMap[id].label = id; }
+          var shortLabel = shortenLabel(nodesMap[id].label);
+          nodeState[id] = { expanded: true, baseLabel: shortLabel };
+          nodesMap[id].label = shortLabel + " [-]";
+          nodesMap[id].shape = nodesMap[id].literal ? "box" : "circle";
+        }
+        return { nodes: Object.values(nodesMap), edges: edges };
+      }
+
+      // Color nodes based on their rdf:type namespace.
+      function assignColors(nodes) {
+        var palette = [
+          "#FF5733", "#33FF57", "#3357FF", "#F3FF33",
+          "#FF33F6", "#33FFF6", "#F633FF", "#33A1FF"
+        ];
+        var localPrefixColor = {};
+        var colorIndex = 0;
+        nodes.forEach(function (node) {
+          if (node.type) {
+            var ns = node.type;
+            var lastHash = ns.lastIndexOf("#");
+            var lastSlash = ns.lastIndexOf("/");
+            var index = Math.max(lastHash, lastSlash);
+            var prefixNS = (index !== -1) ? ns.substring(0, index + 1) : ns;
+            var shortPrefix = shortenURI(ns).split(":")[0];
+            if (!localPrefixColor[shortPrefix]) {
+              localPrefixColor[shortPrefix] = palette[colorIndex % palette.length];
+              colorIndex++;
+            }
+            node.color = { background: localPrefixColor[shortPrefix], border: "#000" };
+            node.title = "Type: " + shortenURI(node.type);
+          } else {
+            node.color = { background: "#CCCCCC", border: "#000" };
+            node.title = node.literal ? "Literal: " + node.label : "IRI: " + node.id;
+          }
+        });
+        prefixColorMapping = localPrefixColor;
+        updateLegend();
+      }
+
+      // Update the legend – now showing full namespace under each prefix.
+      function updateLegend() {
+        var legendList = document.getElementById("legendList");
+        legendList.innerHTML = "";
+        for (var prefix in prefixColorMapping) {
+          var li = document.createElement("li");
+          li.className = "list-group-item legend-item";
+          var ns = "";
+          for (var k in knownPrefixes) {
+            var displayKey = (k === "" ? "base" : k);
+            if (displayKey === prefix) {
+              ns = knownPrefixes[k];
+              break;
+            }
+          }
+          li.innerHTML =
+            '<div style="display:flex; align-items:center;">' +
+              '<span class="legend-color" style="background:' + prefixColorMapping[prefix] + ';"></span>' +
+              '<strong>' + prefix + '</strong>' +
+            '</div>' +
+            '<div style="font-size:smaller; color:#555;">' + ns + '</div>';
+          legendList.appendChild(li);
+        }
+      }
+
+      // Render the vis-network graph with additional node and edge options.
+      function renderNetwork(graphData) {
+        var hideIsolated = document.getElementById("hideIsolatedNodes").checked;
+        var displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
+        if (hideIsolated) {
+          var connectedIds = new Set();
+          graphData.edges.forEach(function (edge) {
+            connectedIds.add(edge.from);
+            connectedIds.add(edge.to);
+          });
+          graphData.nodes = graphData.nodes.filter(function (n) { return connectedIds.has(n.id); });
+        }
+        if (!displayEdgeLabels) {
+          graphData.edges.forEach(function (edge) { edge.label = ""; });
+        }
+        networkNodes = new vis.DataSet(graphData.nodes);
+        networkEdges = new vis.DataSet(graphData.edges);
+
+        var container = document.getElementById("graphContainer");
+        var layoutOptions = {};
+        var disableImprovedLayout = document.getElementById("disableImprovedLayout").checked;
+        var layoutType = document.getElementById("layoutType").value;
+        var enablePhysics = document.getElementById("enablePhysics").checked;
+        if (layoutType === "hierarchical") {
+          layoutOptions = {
+            hierarchical: { enabled: true, direction: "UD", sortMethod: "directed" },
+            improvedLayout: !disableImprovedLayout
+          };
+        } else {
+          layoutOptions = { improvedLayout: !disableImprovedLayout };
+        }
+
+        // Get connection style from dropdown.
+        var connectionStyle = document.getElementById("connectionStyle").value;
+        var smoothOption = connectionStyle === "curved" ?
+          { enabled: true, type: "continuous" } : false;
+
+        var options = {
+          layout: layoutOptions,
+          physics: { enabled: enablePhysics },
+          interaction: { hover: true },
+          edges: { smooth: smoothOption },
+          nodes: {
+            // Ensure consistent node size and allow text wrapping.
+            widthConstraint: { maximum: 100 },
+            font: { multi: true, size: 10 },
+            shapeProperties: { useImageSize: false }
+          }
+        };
+
+        if (network) { network.destroy(); }
+        network = new vis.Network(container, { nodes: networkNodes, edges: networkEdges }, options);
+        network.on("doubleClick", function (params) {
+          if (params.nodes.length > 0) {
+            var nodeId = params.nodes[0];
+            toggleNode(nodeId);
+          }
+        });
+      }
+
+      // Toggle a node's expansion state.
+      function toggleNode(nodeId) {
+        var state = nodeState[nodeId];
+        if (!state) return;
+        if (state.expanded) {
+          collapseNode(nodeId);
+          state.expanded = false;
+          networkNodes.update({ id: nodeId, label: state.baseLabel + " [+]" });
+        } else {
+          expandNode(nodeId);
+          state.expanded = true;
+          networkNodes.update({ id: nodeId, label: state.baseLabel + " [-]" });
+        }
+      }
+
+      // Collapse a node: hide outgoing edges and target nodes if necessary.
+      function collapseNode(nodeId) {
+        var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
+        outEdges.forEach(function (edge) {
+          networkEdges.update({ id: edge.id, hidden: true });
+          var incoming = networkEdges.get({ filter: function (e) { return e.to === edge.to && !e.hidden; } });
+          if (incoming.length === 0) { networkNodes.update({ id: edge.to, hidden: true }); }
+        });
+      }
+
+      // Expand a node: show outgoing edges and target nodes.
+      function expandNode(nodeId) {
+        var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
+        outEdges.forEach(function (edge) {
+          networkEdges.update({ id: edge.id, hidden: false });
+          networkNodes.update({ id: edge.to, hidden: false });
+        });
+      }
+
+      // Make the legend draggable.
+      (function makeLegendDraggable() {
+        var legend = document.getElementById("legend");
+        var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        legend.onmousedown = dragMouseDown;
+        function dragMouseDown(e) {
+          e = e || window.event;
+          e.preventDefault();
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          document.onmouseup = closeDragElement;
+          document.onmousemove = elementDrag;
+        }
+        function elementDrag(e) {
+          e = e || window.event;
+          e.preventDefault();
+          pos1 = pos3 - e.clientX;
+          pos2 = pos4 - e.clientY;
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          legend.style.top = (legend.offsetTop - pos2) + "px";
+          legend.style.left = (legend.offsetLeft - pos1) + "px";
+        }
+        function closeDragElement() {
+          document.onmouseup = null;
+          document.onmousemove = null;
+        }
+      })();
+
+      // Export the current view (graph + legend) as an SVG file.
+      function exportSVG() {
+        var container = document.getElementById("graphContainer");
+        var width = container.clientWidth;
+        var height = container.clientHeight;
+        var svgNS = "http://www.w3.org/2000/svg";
+        var svgElem = document.createElementNS(svgNS, "svg");
+        svgElem.setAttribute("width", width);
+        svgElem.setAttribute("height", height);
+        svgElem.setAttribute("xmlns", svgNS);
+
+        // Define arrow marker.
+        var defs = document.createElementNS(svgNS, "defs");
+        var marker = document.createElementNS(svgNS, "marker");
+        marker.setAttribute("id", "arrow");
+        marker.setAttribute("markerWidth", "10");
+        marker.setAttribute("markerHeight", "10");
+        marker.setAttribute("refX", "10");
+        marker.setAttribute("refY", "3");
+        marker.setAttribute("orient", "auto");
+        marker.setAttribute("markerUnits", "strokeWidth");
+        var arrowPath = document.createElementNS(svgNS, "path");
+        arrowPath.setAttribute("d", "M0,0 L0,6 L9,3 z");
+        arrowPath.setAttribute("fill", "#000");
+        marker.appendChild(arrowPath);
+        defs.appendChild(marker);
+        svgElem.appendChild(defs);
+
+        var positions = network.getPositions();
+        networkEdges.get().forEach(function(edge) {
+          if (edge.hidden) return;
+          var fromPos = positions[edge.from];
+          var toPos = positions[edge.to];
+          if (!fromPos || !toPos) return;
+          var line = document.createElementNS(svgNS, "line");
+          line.setAttribute("x1", fromPos.x);
+          line.setAttribute("y1", fromPos.y);
+          line.setAttribute("x2", toPos.x);
+          line.setAttribute("y2", toPos.y);
+          line.setAttribute("stroke", "#000");
+          line.setAttribute("stroke-width", "2");
+          line.setAttribute("marker-end", "url(#arrow)");
+          svgElem.appendChild(line);
+          if (document.getElementById("displayEdgeLabels").checked && edge.label) {
+            var midX = (fromPos.x + toPos.x) / 2;
+            var midY = (fromPos.y + toPos.y) / 2;
+            var text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", midX);
+            text.setAttribute("y", midY);
+            text.setAttribute("font-size", "10");
+            text.setAttribute("fill", "#000");
+            text.setAttribute("text-anchor", "middle");
+            text.textContent = shortenLabel(edge.label);
+            svgElem.appendChild(text);
+          }
+        });
+        networkNodes.get().forEach(function(node) {
+          if (node.hidden) return;
+          var pos = positions[node.id];
+          if (!pos) return;
+          if (node.shape === "circle") {
+            var circle = document.createElementNS(svgNS, "circle");
+            circle.setAttribute("cx", pos.x);
+            circle.setAttribute("cy", pos.y);
+            circle.setAttribute("r", "15");
+            var fill = (node.color && node.color.background) ? node.color.background : "#CCCCCC";
+            var stroke = (node.color && node.color.border) ? node.color.border : "#000";
+            circle.setAttribute("fill", fill);
+            circle.setAttribute("stroke", stroke);
+            circle.setAttribute("stroke-width", "2");
+            svgElem.appendChild(circle);
+          } else {
+            var rect = document.createElementNS(svgNS, "rect");
+            rect.setAttribute("x", pos.x - 15);
+            rect.setAttribute("y", pos.y - 15);
+            rect.setAttribute("width", "30");
+            rect.setAttribute("height", "30");
+            var fill = (node.color && node.color.background) ? node.color.background : "#CCCCCC";
+            var stroke = (node.color && node.color.border) ? node.color.border : "#000";
+            rect.setAttribute("fill", fill);
+            rect.setAttribute("stroke", stroke);
+            rect.setAttribute("stroke-width", "2");
+            svgElem.appendChild(rect);
+          }
+          var text = document.createElementNS(svgNS, "text");
+          text.setAttribute("x", pos.x);
+          text.setAttribute("y", pos.y + 4);
+          text.setAttribute("font-size", "10");
+          text.setAttribute("fill", "#000");
+          text.setAttribute("text-anchor", "middle");
+          var label = nodeState[node.id] ? nodeState[node.id].baseLabel : node.label;
+          text.textContent = label;
+          svgElem.appendChild(text);
+        });
+        var legendGroup = document.createElementNS(svgNS, "g");
+        // Legend in upper right of SVG.
+        var legendX = 10, legendY = 10;
+        var legendRectWidth = 180;
+        var legendItemHeight = 25;
+        var numItems = Object.keys(prefixColorMapping).length;
+        var legendHeight = numItems * legendItemHeight + 10;
+        var legendBg = document.createElementNS(svgNS, "rect");
+        legendBg.setAttribute("x", legendX);
+        legendBg.setAttribute("y", legendY);
+        legendBg.setAttribute("width", legendRectWidth);
+        legendBg.setAttribute("height", legendHeight);
+        legendBg.setAttribute("fill", "#fff");
+        legendBg.setAttribute("stroke", "#000");
+        legendGroup.appendChild(legendBg);
+        var i = 0;
+        for (var prefix in prefixColorMapping) {
+          var itemY = legendY + 15 + i * legendItemHeight;
+          var colorRect = document.createElementNS(svgNS, "rect");
+          colorRect.setAttribute("x", legendX + 5);
+          colorRect.setAttribute("y", itemY - 12);
+          colorRect.setAttribute("width", "10");
+          colorRect.setAttribute("height", "10");
+          colorRect.setAttribute("fill", prefixColorMapping[prefix]);
+          colorRect.setAttribute("stroke", "#000");
+          legendGroup.appendChild(colorRect);
+          var legendText = document.createElementNS(svgNS, "text");
+          legendText.setAttribute("x", legendX + 20);
+          legendText.setAttribute("y", itemY - 2);
+          legendText.setAttribute("font-size", "10");
+          legendText.setAttribute("fill", "#000");
+          legendText.textContent = prefix;
+          legendGroup.appendChild(legendText);
+          var ns = "";
+          for (var k in knownPrefixes) {
+            var displayKey = (k === "" ? "base" : k);
+            if (displayKey === prefix) {
+              ns = knownPrefixes[k];
+              break;
+            }
+          }
+          var nsText = document.createElementNS(svgNS, "text");
+          nsText.setAttribute("x", legendX + 5);
+          nsText.setAttribute("y", itemY + 10);
+          nsText.setAttribute("font-size", "8");
+          nsText.setAttribute("fill", "#555");
+          nsText.textContent = ns;
+          legendGroup.appendChild(nsText);
+          i++;
+        }
+        svgElem.appendChild(legendGroup);
+        var serializer = new XMLSerializer();
+        var svgString = serializer.serializeToString(svgElem);
+        var blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var downloadLink = document.createElement("a");
+        downloadLink.href = url;
+        downloadLink.download = "graph.svg";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+
+      // -- File input handling --
+      document.getElementById("loadFileButton").addEventListener("click", function () {
+        clearError();
+        var fileInput = document.getElementById("fileInput");
+        if (fileInput.files.length === 0) {
+          showError("Please select a file.");
+          return;
+        }
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onerror = function (e) {
+          showError("Error reading file: " + e.target.error.message);
+        };
+        reader.onload = function (e) {
+          var data = e.target.result;
+          parseRDF(data, "http://example.org/", "text/turtle")
+            .then(function (store) {
+              var graphData = buildGraphFromStore(store);
+              assignColors(graphData.nodes);
+              renderNetwork(graphData);
+            })
+            .catch(function (err) {
+              showError("Error parsing RDF: " + err.message);
+            });
+        };
+        reader.readAsText(file);
+      });
+
+      // -- SPARQL endpoint handling --
+      document.getElementById("loadSparqlButton").addEventListener("click", function () {
+        clearError();
+        var endpointUrl = document.getElementById("endpointUrl").value;
+        var query = document.getElementById("sparqlQuery").value;
+        if (!endpointUrl || !query) {
+          showError("Please provide both an endpoint URL and a SPARQL query.");
+          return;
+        }
+        fetch(endpointUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/sparql-query", Accept: "text/turtle" },
+          body: query
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.text();
+          })
+          .then(function (data) { return parseRDF(data, endpointUrl, "text/turtle"); })
+          .then(function (store) {
+            var graphData = buildGraphFromStore(store);
+            assignColors(graphData.nodes);
+            renderNetwork(graphData);
+          })
+          .catch(function (err) {
+            showError("Error fetching or parsing SPARQL data: " + err.message);
+          });
+      });
+
+      // Apply layout options.
+      document.getElementById("applyLayoutButton").addEventListener("click", function () {
+        if (networkNodes && networkEdges) {
+          var data = { nodes: networkNodes.get(), edges: networkEdges.get() };
+          renderNetwork(data);
+        }
+      });
+
+      // Expand all nodes.
+      document.getElementById("expandAllButton").addEventListener("click", function () {
+        for (var nodeId in nodeState) {
+          if (!nodeState[nodeId].expanded) {
+            expandNode(nodeId);
+            nodeState[nodeId].expanded = true;
+            networkNodes.update({ id: nodeId, label: nodeState[nodeId].baseLabel + " [-]" });
+          }
+        }
+      });
+
+      // Reset view.
+      document.getElementById("resetViewButton").addEventListener("click", function () {
+        if (network) { network.fit(); }
+      });
+
+      // Export SVG.
+      document.getElementById("exportSVGButton").addEventListener("click", exportSVG);
+    </script>
+  </body>
+</html>
