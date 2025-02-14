@@ -399,7 +399,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         }
         networkNodes = new vis.DataSet(graphData.nodes);
         networkEdges = new vis.DataSet(graphData.edges);
-
+      
         var container = document.getElementById("graphContainer");
         var layoutOptions = {};
         var disableImprovedLayout = document.getElementById("disableImprovedLayout").checked;
@@ -413,25 +413,32 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         } else {
           layoutOptions = { improvedLayout: !disableImprovedLayout };
         }
-
-        // Get connection style from dropdown.
+      
         var connectionStyle = document.getElementById("connectionStyle").value;
-        var smoothOption = connectionStyle === "curved" ?
-          { enabled: true, type: "continuous" } : false;
-
+        var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
+      
         var options = {
           layout: layoutOptions,
-          physics: { enabled: enablePhysics },
+          physics: {
+            enabled: enablePhysics,
+            forceAtlas2Based: {
+              gravitationalConstant: -50,
+              centralGravity: 0.01,
+              springLength: 100,
+              springConstant: 0.08,
+            },
+            solver: 'forceAtlas2Based',
+            stabilization: { iterations: 150 },
+          },
           interaction: { hover: true },
           edges: { smooth: smoothOption },
           nodes: {
-            // Ensure consistent node size and allow text wrapping.
             widthConstraint: { maximum: 100 },
             font: { multi: true, size: 10 },
             shapeProperties: { useImageSize: false }
           }
         };
-
+      
         if (network) { network.destroy(); }
         network = new vis.Network(container, { nodes: networkNodes, edges: networkEdges }, options);
         network.on("doubleClick", function (params) {
