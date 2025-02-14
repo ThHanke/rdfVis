@@ -445,10 +445,15 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
             toggleNode(nodeId);
           }
         });
+      
+        customizeNodeLabels(); // Call this function after the network is fully rendered
       }
       
-      // Further code to split the node labels into top and bottom halves
       function customizeNodeLabels() {
+        if (!networkNodes) {
+          console.error("Network nodes are not initialized.");
+          return;
+        }
         networkNodes.get().forEach(function (node) {
           var labelParts = node.label.split(" ");
           var topLabel = labelParts[0];
@@ -458,9 +463,6 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         });
       }
       
-      // Call customizeNodeLabels after rendering the network
-      customizeNodeLabels();
-
       // Toggle a node's expansion state.
       function toggleNode(nodeId) {
         var state = nodeState[nodeId];
@@ -475,7 +477,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           networkNodes.update({ id: nodeId, label: state.baseLabel + " [-]" });
         }
       }
-
+      
       // Collapse a node: hide outgoing edges and target nodes if necessary.
       function collapseNode(nodeId) {
         var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
@@ -485,7 +487,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           if (incoming.length === 0) { networkNodes.update({ id: edge.to, hidden: true }); }
         });
       }
-
+      
       // Expand a node: show outgoing edges and target nodes.
       function expandNode(nodeId) {
         var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
@@ -494,7 +496,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           networkNodes.update({ id: edge.to, hidden: false });
         });
       }
-
+      
       // Make the legend draggable.
       (function makeLegendDraggable() {
         var legend = document.getElementById("legend");
@@ -523,7 +525,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           document.onmousemove = null;
         }
       })();
-
+      
       // Export the current view (graph + legend) as an SVG file.
       function exportSVG() {
         var container = document.getElementById("graphContainer");
@@ -534,7 +536,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         svgElem.setAttribute("width", width);
         svgElem.setAttribute("height", height);
         svgElem.setAttribute("xmlns", svgNS);
-
+      
         // Define arrow marker.
         var defs = document.createElementNS(svgNS, "defs");
         var marker = document.createElementNS(svgNS, "marker");
@@ -551,7 +553,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         marker.appendChild(arrowPath);
         defs.appendChild(marker);
         svgElem.appendChild(defs);
-
+      
         var positions = network.getPositions();
         networkEdges.get().forEach(function(edge) {
           if (edge.hidden) return;
@@ -680,7 +682,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         downloadLink.click();
         document.body.removeChild(downloadLink);
       }
-
+      
       // -- File input handling --
       document.getElementById("loadFileButton").addEventListener("click", function () {
         clearError();
@@ -708,7 +710,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         };
         reader.readAsText(file);
       });
-
+      
       // -- SPARQL endpoint handling --
       document.getElementById("loadSparqlButton").addEventListener("click", function () {
         clearError();
@@ -739,7 +741,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
             showError("Error fetching or parsing SPARQL data: " + err.message);
           });
       });
-
+      
       // Apply layout options.
       document.getElementById("applyLayoutButton").addEventListener("click", function () {
         if (networkNodes && networkEdges) {
@@ -747,7 +749,7 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           renderNetwork(data);
         }
       });
-
+      
       // Expand all nodes.
       document.getElementById("expandAllButton").addEventListener("click", function () {
         for (var nodeId in nodeState) {
@@ -758,14 +760,14 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           }
         }
       });
-
+      
       // Reset view.
       document.getElementById("resetViewButton").addEventListener("click", function () {
         if (network) { network.fit(); }
       });
-
+      
       // Export SVG.
       document.getElementById("exportSVGButton").addEventListener("click", exportSVG);
-    </script>
+      </script>
   </body>
 </html>
