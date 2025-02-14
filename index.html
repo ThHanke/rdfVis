@@ -5,10 +5,7 @@
     <title>Interactive RDF Graph Visualizer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
       /* Global layout styles */
       body {
@@ -415,7 +412,8 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
         }
       
         var connectionStyle = document.getElementById("connectionStyle").value;
-        var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
+        var smoothOption = connectionStyle === "curved" ?
+          { enabled: true, type: "continuous" } : false;
       
         var options = {
           layout: layoutOptions,
@@ -448,6 +446,20 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           }
         });
       }
+      
+      // Further code to split the node labels into top and bottom halves
+      function customizeNodeLabels() {
+        networkNodes.get().forEach(function (node) {
+          var labelParts = node.label.split(" ");
+          var topLabel = labelParts[0];
+          var bottomLabel = labelParts.slice(1).join(" ");
+          node.label = "<b>" + topLabel + "</b><br>" + bottomLabel;
+          networkNodes.update(node);
+        });
+      }
+      
+      // Call customizeNodeLabels after rendering the network
+      customizeNodeLabels();
 
       // Toggle a node's expansion state.
       function toggleNode(nodeId) {
