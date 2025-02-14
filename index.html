@@ -416,6 +416,11 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
           { enabled: true, type: "continuous" } : false;
       
         var options = {
+          configure: {
+             enabled: true,
+             filter: 'physics, layout',
+             showButton: true
+          },
           layout: layoutOptions,
           physics: {
             enabled: enablePhysics,
