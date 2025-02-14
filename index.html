@@ -450,17 +450,17 @@ CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
       }
       
       function customizeNodeLabels() {
-        if (!networkNodes) {
-          console.error("Network nodes are not initialized.");
-          return;
+        if (networkNodes && networkNodes.get()) {
+          networkNodes.get().forEach(function (node) {
+            var labelParts = node.label.split(" ");
+            var topLabel = labelParts[0];
+            var bottomLabel = labelParts.slice(1).join(" ");
+            node.label = "<b>" + topLabel + "</b><br>" + bottomLabel;
+            networkNodes.update(node);
+          });
+        } else {
+          console.error("Network nodes are not initialized or empty.");
         }
-        networkNodes.get().forEach(function (node) {
-          var labelParts = node.label.split(" ");
-          var topLabel = labelParts[0];
-          var bottomLabel = labelParts.slice(1).join(" ");
-          node.label = "<b>" + topLabel + "</b><br>" + bottomLabel;
-          networkNodes.update(node);
-        });
       }
       
       // Toggle a node's expansion state.
