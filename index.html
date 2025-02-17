@@ -9,6 +9,10 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <!-- Include full d3 library first -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Then include d3-scale-chromatic -->
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <style>
       #sidebar {
           transition: margin 0.3s;
@@ -27,9 +31,24 @@
         bottom: 20px;
         right: 20px;
         width: 220px;
+        max-height: 300px; /* if you wish, keep a max-height */
+        overflow: auto;
         z-index: 1001;
         cursor: move;
+        resize: both; /* enable browser native resize if supported */
       }
+      
+      #legendResizeHandle {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 15px;
+        height: 15px;
+        cursor: se-resize;
+        background: rgba(0, 0, 0, 0.2);
+      }
+      
+      
   
       #legend .legend-item {
         display: flex;
@@ -116,7 +135,8 @@
         <button id="toggleSidebar" class="btn btn-sm me-2">☰</button>
         <a class="navbar-brand" href="#">Interactive RDF Graph Visualizer</a>
         <div class="ms-auto">
-          <button id="toggleConfigBox" class="btn btn-secondary btn-sm">Config</button>
+          <button id="toggleLegend" class="btn btn-secondary btn-sm ms-2">Legend</button>
+          <button id="toggleConfigBox" class="btn btn-secondary btn-sm">Physics</button>
         </div>
       </div>
     </nav>
@@ -144,7 +164,13 @@
                 <div id="fileSection" class="mb-3">
                   <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
                   <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
-                </div>
+                  
+                  <div class="mt-3">
+                    <label class="form-label">Or enter file URL:</label>
+                    <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" class="form-control" />
+                    <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
+                  </div>
+                </div>                
                 <!-- SPARQL Input Section -->
                 <div id="sparqlSection" class="mb-3" style="display: none;">
                   <div class="mb-2">
@@ -170,8 +196,8 @@
                   <div class="mb-2">
                     <label for="layoutType" class="form-label">Layout Type:</label>
                     <select id="layoutType" class="form-select form-select-sm">
-                      <option value="force" selected>Force Directed</option>
-                      <option value="hierarchical">Hierarchical</option>
+                      <option value="force">Force Directed</option>
+                      <option value="hierarchical" selected>Hierarchical</option>
                     </select>
                   </div>
                   <div class="mb-2">
@@ -184,11 +210,11 @@
                   <div class="mb-2">
                     <label for="physicsModel" class="form-label">Physics Model:</label>
                     <select id="physicsModel" class="form-select form-select-sm">
-                      <option value="barnesHut" selected>Barnes-Hut</option>
+                      <option value="barnesHut">Barnes-Hut</option>
                       <option value="forceAtlas2Based">Force Atlas 2 Based</option>
                       <option value="repulsion">Repulsion</option>
                       <option value="hierarchicalRepulsion">Hierarchical Repulsion</option>
-                      <option value="disabled">Disabled</option>
+                      <option value="disabled" selected>Disabled</option>
                     </select>
                   </div>
                   <div class="form-check">
@@ -238,6 +264,7 @@
                 <div id="legend" class="card">
                   <div class="card-header">Legend</div>
                   <ul class="list-group list-group-flush" id="legendList"></ul>
+                  <div id="legendResizeHandle"></div>
                 </div>
               </div>
             </main>
@@ -319,6 +346,43 @@
         document.onmousemove = null;
       }
     })();
+    // Toggle legend visibility when the "Legend" button is clicked.
+    document.getElementById("toggleLegend").addEventListener("click", function() {
+      const legend = document.getElementById("legend");
+      if (legend.style.display === "none" || legend.style.display === "") {
+        legend.style.display = "block";
+      } else {
+        legend.style.display = "none";
+      }
+    });
+
+    // Make legend resizable using the custom resize handle.
+    (function makeLegendResizable() {
+      const legend = document.getElementById("legend");
+      const resizer = document.getElementById("legendResizeHandle");
+      let startX, startY, startWidth, startHeight;
+
+      resizer.addEventListener("mousedown", function(e) {
+        e.preventDefault();
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = parseInt(window.getComputedStyle(legend).width, 10);
+        startHeight = parseInt(window.getComputedStyle(legend).height, 10);
+        document.documentElement.addEventListener("mousemove", doDrag, false);
+        document.documentElement.addEventListener("mouseup", stopDrag, false);
+      });
+
+      function doDrag(e) {
+        legend.style.width = (startWidth + e.clientX - startX) + "px";
+        legend.style.height = (startHeight + e.clientY - startY) + "px";
+      }
+
+      function stopDrag(e) {
+        document.documentElement.removeEventListener("mousemove", doDrag, false);
+        document.documentElement.removeEventListener("mouseup", stopDrag, false);
+      }
+    })();
+
     </script>
 		<script>
 			// Global variables
@@ -397,36 +461,42 @@
       });
 			// Shorten URI – if base defined, use "base:".
 			function shortenURI(uri) {
-				if (knownPrefixes["base"] && uri.indexOf(knownPrefixes["base"]) === 0) {
-					return "base:" + uri.substring(knownPrefixes["base"].length);
-				}
-				var entries = Object.entries(knownPrefixes).map(function ([p, ns]) {
-					return { prefix: (p === "" ? "base" : p), ns: ns };
-				});
-				entries.sort(function (a, b) {
-					return b.ns.length - a.ns.length;
-				});
-				for (var i = 0; i < entries.length; i++) {
-					var prefix = entries[i].prefix;
-					var ns = entries[i].ns;
-					if (uri.indexOf(ns) === 0) {
-						return prefix + ":" + uri.substring(ns.length);
-					}
-				}
-				var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
-				if (idx === -1) return uri;
-				var ns = uri.substring(0, idx + 1);
-				var local = uri.substring(idx + 1);
-				for (var key in knownPrefixes) {
-					if (knownPrefixes[key] === ns) {
-						var pfx = (key === "" ? "base" : key);
-						return pfx + ":" + local;
-					}
-				}
-				var newPrefix = "ns" + generatedPrefixCounter++;
-				knownPrefixes[newPrefix] = ns;
-				return newPrefix + ":" + local;
-			}
+        if (knownPrefixes["base"] && uri.indexOf(knownPrefixes["base"]) === 0) {
+          return "base:" + uri.substring(knownPrefixes["base"].length);
+        }
+        // Filter out any undefined or non-string values.
+        var entries = Object.entries(knownPrefixes)
+          .filter(function ([p, ns]) {
+            return ns && typeof ns === "string";
+          })
+          .map(function ([p, ns]) {
+            return { prefix: (p === "" ? "base" : p), ns: ns };
+          });
+        entries.sort(function (a, b) {
+          return b.ns.length - a.ns.length;
+        });
+        for (var i = 0; i < entries.length; i++) {
+          var prefix = entries[i].prefix;
+          var ns = entries[i].ns;
+          if (uri.indexOf(ns) === 0) {
+            return prefix + ":" + uri.substring(ns.length);
+          }
+        }
+        var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
+        if (idx === -1) return uri;
+        var ns = uri.substring(0, idx + 1);
+        var local = uri.substring(idx + 1);
+        for (var key in knownPrefixes) {
+          if (knownPrefixes[key] === ns) {
+            var pfx = (key === "" ? "base" : key);
+            return pfx + ":" + local;
+          }
+        }
+        var newPrefix = "ns" + generatedPrefixCounter++;
+        knownPrefixes[newPrefix] = ns;
+        return newPrefix + ":" + local;
+      }
+      
 
       function shortenLabel(label) {
 				if (label.startsWith("http://") || label.startsWith("https://")) {
@@ -438,32 +508,125 @@
 
 			// Parse RDF using rdflib (Turtle)
 			function parseRDF(data, baseUrl, contentType) {
-				return new Promise(function (resolve, reject) {
-					store = $rdf.graph();
-					knownPrefixes = {
-						rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-						rdfs: "http://www.w3.org/2000/01/rdf-schema#",
-						xsd: "http://www.w3.org/2001/XMLSchema#"
-					};
-					$rdf.parse(data, store, baseUrl, contentType, function (err) {
-						if (err) {
-							reject(err);
-						} else {
-							if (store.namespaces) {
-								if (store.namespaces[""]) {
-									knownPrefixes["base"] = store.namespaces[""];
-								}
-								for (var prefix in store.namespaces) {
-                  if (!knownPrefixes[prefix]) {
-                      knownPrefixes[prefix] = store.namespaces[prefix];
+        return new Promise(function (resolve, reject) {
+          store = $rdf.graph();
+          // Reset knownPrefixes to avoid stale or undefined values.
+          knownPrefixes = {
+            rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            rdfs: "http://www.w3.org/2000/01/rdf-schema#",
+            xsd: "http://www.w3.org/2001/XMLSchema#"
+          };
+          $rdf.parse(data, store, baseUrl, contentType, function (err) {
+            if (err) {
+              console.error("Error parsing RDF:", err);
+              return reject(new Error("Error parsing RDF: " + err.message));
+            }
+            try {
+              if (store.namespaces) {
+                if (store.namespaces[""]) {
+                  knownPrefixes["base"] = store.namespaces[""];
+                }
+                for (var prefix in store.namespaces) {
+                  if (store.namespaces.hasOwnProperty(prefix)) {
+                    let ns = store.namespaces[prefix];
+                    // Ensure ns is defined and a string before assignment.
+                    if (ns && typeof ns === "string" && !knownPrefixes[prefix]) {
+                      knownPrefixes[prefix] = ns;
+                    }
                   }
                 }
               }
               resolve(store);
-						}
-					});
-				});
-			}
+            } catch (ex) {
+              console.error("Exception during RDF processing:", ex);
+              reject(new Error("Exception during RDF processing: " + ex.message));
+            }
+          });
+        });
+      }
+      // Helper function to perform fetch with a timeout.
+      function fetchWithTimeout(url, options = {}, timeout = 10000) {
+        return new Promise((resolve, reject) => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => {
+            controller.abort();
+            reject(new Error("Request timed out"));
+          }, timeout);
+
+          fetch(url, { ...options, signal: controller.signal })
+            .then(response => {
+              clearTimeout(timer);
+              resolve(response);
+            })
+            .catch(err => {
+              clearTimeout(timer);
+              reject(err);
+            });
+        });
+      }
+
+      // Load RDF data from URL parameters (source for file, sparql for SPARQL endpoint).
+      function loadFromURLParameters() {
+        const params = new URLSearchParams(window.location.search);
+        const sourceUrl = params.get("source");
+        const sparqlUrl = params.get("sparql");
+
+        if (sourceUrl) {
+          fetchWithTimeout(sourceUrl, {}, 10000)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+              }
+              return response.text();
+            })
+            .then(data => {
+              localStorage.setItem("rdfData", data);
+              parseRDF(data, sourceUrl, "text/turtle")
+                .then(store => {
+                  const graphData = buildGraphFromStore(store);
+                  assignColors(graphData.nodes);
+                  renderNetwork(graphData);
+                })
+                .catch(err => {
+                  console.error("Error parsing RDF from source URL:", err);
+                });
+            })
+            .catch(err => {
+              console.error("Error fetching RDF file from source URL:", err);
+            });
+        }
+
+        if (sparqlUrl) {
+          const sparqlQuery = params.get("query") || "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100";
+          fetchWithTimeout(sparqlUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/sparql-query", "Accept": "text/turtle" },
+            body: sparqlQuery
+          }, 10000)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+              }
+              return response.text();
+            })
+            .then(data => {
+              parseRDF(data, sparqlUrl, "text/turtle")
+                .then(store => {
+                  const graphData = buildGraphFromStore(store);
+                  assignColors(graphData.nodes);
+                  renderNetwork(graphData);
+                })
+                .catch(err => {
+                  console.error("Error parsing RDF from SPARQL URL:", err);
+                });
+            })
+            .catch(err => {
+              console.error("Error fetching SPARQL data from URL parameter:", err);
+            });
+        }
+      }
+
+     
 
 			// Build graph from store.
 			function buildGraphFromStore(store) {
@@ -512,11 +675,8 @@
 
 			// Color nodes based on their rdf:type namespace.
       function assignColors(nodes) {
-        // Define a palette of colors.
-        var palette = [
-          "#FF5733", "#33FF57", "#3357FF", "#F3FF33",
-          "#FF33F6", "#33FFF6", "#F633FF", "#33A1FF"
-        ];
+        // Use a ColorBrewer qualitative palette from d3-scale-chromatic:
+        var palette = d3.schemeSet2; // an array of colors
         var localPrefixColor = {};
         var colorIndex = 0;
         // Build the mapping from all prefixes in knownPrefixes
@@ -541,12 +701,10 @@
               node.color = { background: localPrefixColor[chosenPrefix], border: "#000" };
               node.title = "Type: " + shortenURI(node.type);
             } else {
-              // No matching prefix—use default gray.
               node.color = { background: "#CCCCCC", border: "#000" };
               node.title = node.literal ? "Literal: " + node.label : "IRI: " + node.id;
             }
           } else {
-            // If node has no type, use default gray.
             node.color = { background: "#CCCCCC", border: "#000" };
             node.title = node.literal ? "Literal: " + node.label : "IRI: " + node.id;
           }
@@ -556,6 +714,7 @@
         prefixColorMapping = localPrefixColor;
         updateLegend();
       }
+      
       
       
 
@@ -662,7 +821,7 @@
           },
           configure: {
             enabled: true,
-            filter: ["physics", "layout"],
+            filter: ["physics"],
             showButton: false,
             container: configBoxContent, // Render config controls inside configBoxContent
           },
@@ -898,35 +1057,56 @@
 			}
 
 			window.onload = function () {
-				initializeNetwork();
-			};
+        initializeNetwork();
+        window.scrollTo(0, 0);
+      
+        const savedData = localStorage.getItem("rdfData");
+        if (savedData) {
+          parseRDF(savedData, "http://example.org/", "text/turtle")
+            .then(store => {
+              const graphData = buildGraphFromStore(store);
+              assignColors(graphData.nodes);
+              renderNetwork(graphData);
+            })
+            .catch(err => showError("Error parsing RDF: " + err.message));
+        }
+        
+        // Load from URL parameters if provided.
+        loadFromURLParameters();
+      };
+      
+      
+      
 
 			document.getElementById("loadFileButton").addEventListener("click", function () {
-				clearError();
-				const fileInput = document.getElementById("fileInput");
-				if (fileInput.files.length === 0) {
-					showError("Please select a file.");
-					return;
-				}
-				const file = fileInput.files[0];
-				const reader = new FileReader();
-				reader.onerror = function (e) {
-					showError("Error reading file: " + e.target.error.message);
-				};
-				reader.onload = function (e) {
-					const data = e.target.result;
-					parseRDF(data, "http://example.org/", "text/turtle")
-						.then(function (store) {
-							const graphData = buildGraphFromStore(store);
-							assignColors(graphData.nodes);
-							renderNetwork(graphData);
-						})
-						.catch(function (err) {
-							showError("Error parsing RDF: " + err.message);
-						});
-				};
-				reader.readAsText(file);
-			});
+        clearError();
+        const fileInput = document.getElementById("fileInput");
+        if (fileInput.files.length === 0) {
+          showError("Please select a file.");
+          return;
+        }
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onerror = function (e) {
+          showError("Error reading file: " + e.target.error.message);
+        };
+        reader.onload = function (e) {
+          const data = e.target.result;
+          // Save the RDF data so it persists on reload:
+          localStorage.setItem("rdfData", data);
+          parseRDF(data, "http://example.org/", "text/turtle")
+            .then(function (store) {
+              const graphData = buildGraphFromStore(store);
+              assignColors(graphData.nodes);
+              renderNetwork(graphData);
+            })
+            .catch(function (err) {
+              showError("Error parsing RDF: " + err.message);
+            });
+        };
+        reader.readAsText(file);
+      });
+      
       
 			document.getElementById("loadSparqlButton").addEventListener("click", function () {
 				clearError();
@@ -959,7 +1139,37 @@
 						showError("Error fetching or parsing SPARQL data: " + err.message);
 					});
 			});
-
+      document.getElementById("loadFileUrlButton").addEventListener("click", function () {
+        clearError();
+        const fileUrl = document.getElementById("fileUrlInput").value.trim();
+        if (!fileUrl) {
+          showError("Please enter a file URL.");
+          return;
+        }
+        fetch(fileUrl)
+          .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok: " + response.statusText);
+            return response.text();
+          })
+          .then(data => {
+            localStorage.setItem("rdfData", data);
+            parseRDF(data, fileUrl, "text/turtle")
+              .then(function (store) {
+                const graphData = buildGraphFromStore(store);
+                assignColors(graphData.nodes);
+                renderNetwork(graphData);
+              })
+              .catch(function (err) {
+                console.error("Error parsing RDF from URL:", err);
+                showError("Error parsing RDF from URL: " + err.message);
+              });
+          })
+          .catch(err => {
+            console.error("Error fetching RDF file from URL:", err);
+            showError("Error fetching RDF file from URL: " + err.message);
+          });
+      });
+      
 			document.getElementById("layoutType").addEventListener("change", applyLayoutPhysics);
       document.getElementById("physicsModel").addEventListener("change", applyLayoutPhysics);
       //document.getElementById("connectionStyle").addEventListener("change", applyEdgeFormat);
@@ -1054,7 +1264,79 @@
         downloadLink.click();
         document.body.removeChild(downloadLink);
       }
-      
+      // Synchronize the physics configuration between the config box and sidebar select.
+      function syncConfigToSidebar() {
+        // Find the physics enabled checkbox inside the config box.
+        // (Assuming the first vis-config-checkbox corresponds to physics enabled.)
+        const physicsCheckbox = document.querySelector("#configBoxContent input.vis-config-checkbox");
+        // Find the solver select element inside the config box.
+        const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
+        // Get the sidebar physics model select.
+        const sidebarPhysicsSelect = document.getElementById("physicsModel");
+
+        if (physicsCheckbox && solverSelect && sidebarPhysicsSelect) {
+          if (!physicsCheckbox.checked) { 
+            // Physics is disabled; update the sidebar accordingly.
+            sidebarPhysicsSelect.value = "disabled";
+            sidebarPhysicsSelect.disabled = true;
+          } else {
+            sidebarPhysicsSelect.disabled = false;
+            // If physics is enabled, sync the selected solver from the config box.
+            sidebarPhysicsSelect.value = solverSelect.value;
+          }
+        }
+      }
+
+      // Listen for changes in the config box (generated by vis-network)
+      document.getElementById("configBoxContent").addEventListener("change", function () {
+        // Re-render or update your network as needed.
+        renderGraph();
+        // Sync the sidebar values.
+        syncConfigToSidebar();
+      });
+
+      // Listen for changes on the sidebar physics model select.
+      document.getElementById("physicsModel").addEventListener("change", function () {
+        const sidebarValue = this.value;
+        // Find the corresponding controls inside the config box.
+        const physicsCheckbox = document.querySelector("#configBoxContent input.vis-config-checkbox");
+        const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
+
+        if (physicsCheckbox && solverSelect) {
+          if (sidebarValue === "disabled") {
+            // Uncheck the physics checkbox if the sidebar select is set to "disabled".
+            physicsCheckbox.checked = false;
+            // Trigger change event to propagate the update.
+            physicsCheckbox.dispatchEvent(new Event("change"));
+          } else {
+            // Enable physics by checking the checkbox.
+            physicsCheckbox.checked = true;
+            // Set the solver select in the config box to match the sidebar.
+            solverSelect.value = sidebarValue;
+            // Trigger change events on both elements.
+            physicsCheckbox.dispatchEvent(new Event("change"));
+            solverSelect.dispatchEvent(new Event("change"));
+          }
+        }
+      });
+      // Listen for changes on the physics enabled checkbox in the config box.
+      document.addEventListener("change", function(e) {
+        if (e.target.matches("#configBoxContent input.vis-config-checkbox")) {
+          const isEnabled = e.target.checked;
+          const sidebarPhysicsSelect = document.getElementById("physicsModel");
+          if (isEnabled) {
+            sidebarPhysicsSelect.disabled = false;
+            const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
+            sidebarPhysicsSelect.value = solverSelect ? solverSelect.value : "barnesHut";
+          } else {
+            sidebarPhysicsSelect.disabled = true;
+            sidebarPhysicsSelect.value = "disabled";
+          }
+          renderGraph();
+        }
+      });
+
+
 		</script>
 	</body>
 </html>
