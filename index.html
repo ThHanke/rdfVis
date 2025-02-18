@@ -413,6 +413,30 @@
 			var currentNodeRadius = 15;
 			var currentFontSize = 10;
 
+      function saveConfigOptions() {
+        const config = {
+          layoutType: document.getElementById("layoutType").value,
+          physicsModel: document.getElementById("physicsModel").value,
+          connectionStyle: document.getElementById("connectionStyle").value,
+          hideIsolatedNodes: document.getElementById("hideIsolatedNodes").checked,
+          displayEdgeLabels: document.getElementById("displayEdgeLabels").checked,
+          disableImprovedLayout: document.getElementById("disableImprovedLayout").checked
+        };
+        localStorage.setItem("visNetworkConfig", JSON.stringify(config));
+      }
+      function loadConfigOptions() {
+        const configStr = localStorage.getItem("visNetworkConfig");
+        if (configStr) {
+          const config = JSON.parse(configStr);
+          document.getElementById("layoutType").value = config.layoutType || "hierarchical";
+          document.getElementById("physicsModel").value = config.physicsModel || "disabled";
+          document.getElementById("connectionStyle").value = config.connectionStyle || "curved";
+          document.getElementById("hideIsolatedNodes").checked = config.hideIsolatedNodes;
+          document.getElementById("displayEdgeLabels").checked = config.displayEdgeLabels;
+          document.getElementById("disableImprovedLayout").checked = config.disableImprovedLayout;
+        }
+      }
+
 			// Helper: Create an SVG element with attributes.
 			function createSvgElement(tag, attrs) {
 				var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -462,10 +486,8 @@
 				document.getElementById("fileSection").style.display = "none";
 				document.getElementById("sparqlSection").style.display = "block";
 			});
-      document.getElementById("configBoxContent").addEventListener("change", function() {
-        // Re-render the network with updated configuration values
-        renderGraph();
-      });
+      
+
 			// Shorten URI – if base defined, use "base:".
 			function shortenURI(uri) {
         if (knownPrefixes["base"] && uri.indexOf(knownPrefixes["base"]) === 0) {
@@ -866,7 +888,19 @@
 				var physicsModel = document.getElementById("physicsModel").value;
 				var displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
 				var layoutOption = layoutType === "hierarchical" ?
-					{ hierarchical: { enabled: true, direction: "LR", sortMethod: "directed" }, improvedLayout: !document.getElementById("disableImprovedLayout").checked } :
+					{ hierarchical: {
+            enabled: true,
+            levelSeparation: 150,
+            nodeSpacing: 100,
+            treeSpacing: 200,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true,
+            direction: 'UD',        // UD, DU, LR, RL
+            sortMethod: 'hubsize',  // hubsize, directed
+            shakeTowards: 'leaves'  // roots, leaves
+          },
+            improvedLayout: !document.getElementById("disableImprovedLayout").checked } :
 					{ improvedLayout: !document.getElementById("disableImprovedLayout").checked };
 				var physicsOption = {};
 				var connectionStyle = document.getElementById("connectionStyle").value;
@@ -882,6 +916,7 @@
 						shapeProperties: { useImageSize: false }
 					}
 				};
+        console.log(options)
 				networkNodes = new vis.DataSet(graphData.nodes);
 				networkEdges = new vis.DataSet(graphData.edges);
 				networkNodes.forEach(function (node) {
@@ -917,7 +952,7 @@
         const container = document.getElementById("graphContainer");
         const configBoxContent = document.getElementById("configBoxContent");
         const options = {
-          layout: { hierarchical: { enabled: false, direction: "LR" } },
+          layout: { hierarchical: { enabled: false, direction: "LR"} },
           physics: {
             enabled: true,
             solver: "barnesHut",
@@ -1027,7 +1062,6 @@
             if (incomingEdges.length === 0) {
               // Recursively collapse the connected node
               collapseNode(connectedNodeId);
-              console.log(connectedNodeId)
               network.body.data.nodes.update({ id: connectedNodeId, hidden: true });
               // Ensure nodeState exists before updating
               if (nodeState[connectedNodeId]) {
@@ -1247,6 +1281,7 @@
 			}
 
 			window.onload = function () {
+        loadConfigOptions();
         initializeNetwork();
         window.scrollTo(0, 0);
       
@@ -1339,14 +1374,53 @@
         loadFromURL(fileUrl);
       });
       
-			document.getElementById("layoutType").addEventListener("change", applyLayoutPhysics);
-      document.getElementById("physicsModel").addEventListener("change", applyLayoutPhysics);
-      //document.getElementById("connectionStyle").addEventListener("change", applyEdgeFormat);
-      //document.getElementById("displayEdgeLabels").addEventListener("change", applyEdgeFormat);
-			document.getElementById("connectionStyle").addEventListener("change", renderGraph);
-      document.getElementById("hideIsolatedNodes").addEventListener("change", renderGraph);
-      document.getElementById("displayEdgeLabels").addEventListener("change", renderGraph);
-			
+			//document.getElementById("layoutType").addEventListener("change", applyLayoutPhysics);
+      //document.getElementById("physicsModel").addEventListener("change", applyLayoutPhysics);
+      //document.getElementById("connectionStyle").addEventListener("change", renderGraph);
+      //document.getElementById("hideIsolatedNodes").addEventListener("change", renderGraph);
+      //document.getElementById("displayEdgeLabels").addEventListener("change", renderGraph);
+			//document.getElementById("configBoxContent").addEventListener("change", function() {
+        // Re-render the network with updated configuration values
+      //  renderGraph();
+      //});
+
+      document.getElementById("layoutType").addEventListener("change", function() {
+        saveConfigOptions();
+        applyLayoutPhysics();
+        renderGraph();
+      });
+    
+      document.getElementById("physicsModel").addEventListener("change", function() {
+        saveConfigOptions();
+        renderGraph();
+      });
+    
+      document.getElementById("connectionStyle").addEventListener("change", function() {
+        saveConfigOptions();
+        renderGraph();
+      });
+    
+      document.getElementById("hideIsolatedNodes").addEventListener("change", function() {
+        saveConfigOptions();
+        renderGraph();
+      });
+    
+      document.getElementById("displayEdgeLabels").addEventListener("change", function() {
+        saveConfigOptions();
+        renderGraph();
+      });
+    
+      document.getElementById("disableImprovedLayout").addEventListener("change", function() {
+        saveConfigOptions();
+        renderGraph();
+      });
+    
+      // Also save when the configuration box (generated by vis‑network) changes
+      document.getElementById("configBoxContent").addEventListener("change", function() {
+        syncConfigToSidebar();
+        saveConfigOptions();
+        renderGraph();
+      });
 
       function applyEdgeFormat() {
         const displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
@@ -1360,7 +1434,7 @@
 				const layoutType = document.getElementById("layoutType").value;
 				const physicsModel = document.getElementById("physicsModel").value;
 				let layoutOption = layoutType === "hierarchical" ?
-					{ hierarchical: { enabled: true, direction: "LR", sortMethod: "directed" } } :
+					{ hierarchical: { enabled: true, direction: "LR", sortMethod: "directed", edgeMinimization: true } } :
 					{ hierarchical: { enabled: false } };
 				let physicsOption = {};
 				if (physicsModel !== "disabled") {
