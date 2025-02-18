@@ -14,6 +14,13 @@
     <!-- Then include d3-scale-chromatic -->
     <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <style>
+      #content {
+        height: calc(100vh - 56px); /* Adjust height based on navbar height */
+      }
+      #contentrow {
+        height: 100%; /* Set row height to 100% of the container */
+        overflow: auto; /* Manage overflow content */
+      }
       #sidebar {
           transition: margin 0.3s;
       }
@@ -21,6 +28,7 @@
         transform: translateX(-250px);
         margin-left: -250px; /* Adjust this value based on your sidebar width */
       }
+      
       .container-fluid.expanded {
         margin-left: 0;
       }
@@ -140,106 +148,103 @@
         </div>
       </div>
     </nav>
-    
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid" id="content">
+        <div class="row" id="contentrow">
             <!-- Sidebar -->
-            <div class="sidebar col-12 col-md-3 col-xl-2 px-0 bg-light" id="sidebar">
-              <div id="sidebarContent">
-                <h5>RDF Graph Visualizer</h5>
-                <hr />
-                <!-- Input Source -->
-                <div class="mb-3">
-                  <label class="form-label">Input Source</label>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
-                    <label class="form-check-label" for="fileInputRadio">Load from File</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
-                    <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
-                  </div>
+            <div class="sidebar col-12 col-md-3 col-xl-2 px-0 bg-light d-flex flex-column" id="sidebar">
+              <h5>RDF Graph Visualizer</h5>
+              <hr />
+              <!-- Input Source -->
+              <div class="mb-3">
+                <label class="form-label">Input Source</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
+                  <label class="form-check-label" for="fileInputRadio">Load from File</label>
                 </div>
-                <!-- File Input Section -->
-                <div id="fileSection" class="mb-3">
-                  <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
-                  <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
-                  
-                  <div class="mt-3">
-                    <label class="form-label">Or enter file URL:</label>
-                    <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" class="form-control" />
-                    <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
-                  </div>
-                </div>                
-                <!-- SPARQL Input Section -->
-                <div id="sparqlSection" class="mb-3" style="display: none;">
-                  <div class="mb-2">
-                    <label for="endpointUrl" class="form-label">Endpoint URL:</label>
-                    <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
-                  </div>
-                  <div class="mb-2">
-                    <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
-                    <textarea id="sparqlQuery" class="form-control" rows="3">
-          CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
-                    </textarea>
-                  </div>
-                  <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
+                  <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
                 </div>
-                <hr />
-                <!-- Layout & Display Options -->
-                <div class="mb-3">
-                  <h6>Layout Options</h6>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
-                    <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
-                  </div>
-                  <div class="mb-2">
-                    <label for="layoutType" class="form-label">Layout Type:</label>
-                    <select id="layoutType" class="form-select form-select-sm">
-                      <option value="force">Force Directed</option>
-                      <option value="hierarchical" selected>Hierarchical</option>
-                    </select>
-                  </div>
-                  <div class="mb-2">
-                    <label for="connectionStyle" class="form-label">Connection Style:</label>
-                    <select id="connectionStyle" class="form-select form-select-sm">
-                      <option value="curved" selected>Curved</option>
-                      <option value="straight">Straight</option>
-                    </select>
-                  </div>
-                  <div class="mb-2">
-                    <label for="physicsModel" class="form-label">Physics Model:</label>
-                    <select id="physicsModel" class="form-select form-select-sm">
-                      <option value="barnesHut">Barnes-Hut</option>
-                      <option value="forceAtlas2Based">Force Atlas 2 Based</option>
-                      <option value="repulsion">Repulsion</option>
-                      <option value="hierarchicalRepulsion">Hierarchical Repulsion</option>
-                      <option value="disabled" selected>Disabled</option>
-                    </select>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
-                    <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
-                    <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
-                  </div>
-                  <div class="d-flex flex-wrap gap-1 mt-2">
-                    <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
-                    <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
-                    <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
-                    <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
-                  </div>
-                </div>
-                <hr />
-                <footer class="mt-3">
-                  <small>
-                    Source code available at
-                    <a href="https://github.com/ThHanke/rdfVis" target="_blank">GitHub</a>
-                  </small>
-                </footer>
               </div>
+              <!-- File Input Section -->
+              <div id="fileSection" class="mb-3">
+                <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
+                <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
+                
+                <div class="mt-3">
+                  <label class="form-label">Or enter file URL:</label>
+                  <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" value="https://raw.githubusercontent.com/Mat-O-Lab/IOFMaterialsTutorial/refs/heads/main/sieving_ASTM_B214-07.ttl" class="form-control" />
+                  <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
+                </div>
+              </div>                
+              <!-- SPARQL Input Section -->
+              <div id="sparqlSection" class="mb-3" style="display: none;">
+                <div class="mb-2">
+                  <label for="endpointUrl" class="form-label">Endpoint URL:</label>
+                  <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
+                </div>
+                <div class="mb-2">
+                  <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
+                  <textarea id="sparqlQuery" class="form-control" rows="3">
+        CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
+                  </textarea>
+                </div>
+                <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
+              </div>
+              <hr />
+              <!-- Layout & Display Options -->
+              <div class="mb-3">
+                <h6>Layout Options</h6>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
+                  <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
+                </div>
+                <div class="mb-2">
+                  <label for="layoutType" class="form-label">Layout Type:</label>
+                  <select id="layoutType" class="form-select form-select-sm">
+                    <option value="force">Force Directed</option>
+                    <option value="hierarchical" selected>Hierarchical</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label for="connectionStyle" class="form-label">Connection Style:</label>
+                  <select id="connectionStyle" class="form-select form-select-sm">
+                    <option value="curved" selected>Curved</option>
+                    <option value="straight">Straight</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label for="physicsModel" class="form-label">Physics Model:</label>
+                  <select id="physicsModel" class="form-select form-select-sm">
+                    <option value="barnesHut">Barnes-Hut</option>
+                    <option value="forceAtlas2Based">Force Atlas 2 Based</option>
+                    <option value="repulsion">Repulsion</option>
+                    <option value="hierarchicalRepulsion">Hierarchical Repulsion</option>
+                    <option value="disabled" selected>Disabled</option>
+                  </select>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
+                  <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
+                  <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
+                </div>
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
+                  <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
+                  <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
+                  <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
+                </div>
+              </div>
+              <hr />
+              <footer class="mt-auto">
+                <small>
+                  Source code available at
+                  <a href="https://github.com/ThHanke/rdfVis" target="_blank">GitHub</a>
+                </small>
+              </footer>
             </div>
 
             <!-- Main Content -->
@@ -396,6 +401,8 @@
 				rdfs: "http://www.w3.org/2000/01/rdf-schema#",
 				xsd: "http://www.w3.org/2001/XMLSchema#"
 			};
+      const excludePredicatestoCluster = ['rdf:type','rdfs:label','dcterms:','owl:'];
+      const clusteringThreshold = 10;
 			var generatedPrefixCounter = 1;
 			var prefixNamespaceMapping = {}; // records all prefixes and their namespaces
       var prefixColorMapping = {};     // records the colors for each prefix
@@ -499,13 +506,19 @@
       
 
       function shortenLabel(label) {
-				if (label.startsWith("http://") || label.startsWith("https://")) {
-          //wrapLabel
-					return shortenURI(label);
-				}
-				return label;
-			}
-
+        if (typeof label !== 'string') {
+          if (label && typeof label.value === 'string') {
+            label = label.value;
+          } else {
+            console.error('Label is not a string:', label);
+            return '[Invalid label]';
+          }
+        }
+        if (label.startsWith("http://") || label.startsWith("https://")) {
+          return shortenURI(label);
+        }
+        return label;
+      }
 			// Parse RDF using rdflib (Turtle)
 			function parseRDF(data, baseUrl, contentType) {
         return new Promise(function (resolve, reject) {
@@ -544,6 +557,7 @@
           });
         });
       }
+
       // Helper function to perform fetch with a timeout.
       function fetchWithTimeout(url, options = {}, timeout = 10000) {
         return new Promise((resolve, reject) => {
@@ -565,16 +579,12 @@
         });
       }
 
-      // Load RDF data from URL parameters (source for file, sparql for SPARQL endpoint).
-      function loadFromURLParameters() {
-        const params = new URLSearchParams(window.location.search);
-        const sourceUrl = params.get("source");
-        const sparqlUrl = params.get("sparql");
-
+      function loadFromURL(sourceUrl) {
         if (sourceUrl) {
           fetchWithTimeout(sourceUrl, {}, 10000)
             .then(response => {
               if (!response.ok) {
+                console.log(response)
                 throw new Error("Network response was not ok: " + response.statusText);
               }
               return response.text();
@@ -594,6 +604,16 @@
             .catch(err => {
               console.error("Error fetching RDF file from source URL:", err);
             });
+        }
+      }
+      // Load RDF data from URL parameters (source for file, sparql for SPARQL endpoint).
+      function loadFromURLParameters() {
+        const params = new URLSearchParams(window.location.search);
+        const sourceUrl = params.get("source");
+        const sparqlUrl = params.get("sparql");
+
+        if (sourceUrl) {
+          loadFromURL(sourceUrl);
         }
 
         if (sparqlUrl) {
@@ -626,53 +646,116 @@
         }
       }
 
-     
-
+      function getNodeId(node) {
+        if (node.termType === 'NamedNode') {
+          return node.value;
+        } else if (node.termType === 'BlankNode') {
+          // Use a custom prefix that avoids the ":" syntax
+          return "blank" + node.id;
+        } else if (node.termType === 'Collection') {
+          // Use a custom prefix that avoids the ":" syntax
+          return "collection" + node.id;
+        } else {
+          console.error('Unsupported node termType:', node.termType);
+          return "unknown";
+        }
+      }
+      
+    
 			// Build graph from store.
 			function buildGraphFromStore(store) {
-				var nodesMap = {};
-				var edges = [];
-				var edgeIdCounter = 0;
-				store.statements.forEach(function (st) {
-					var subj = st.subject.value;
-					var pred = st.predicate.value;
-					var obj = st.object.termType === "Literal" ? st.object.value : st.object.value;
-					if (pred === "http://www.w3.org/2000/01/rdf-schema#label") {
-						if (!nodesMap[subj]) {
-							nodesMap[subj] = { id: subj, label: st.object.value };
-						} else {
-							nodesMap[subj].label = st.object.value;
-						}
-					} else if (pred === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
-						if (!nodesMap[subj]) { nodesMap[subj] = { id: subj }; }
-						nodesMap[subj].type = st.object.value;
-					} else {
-						if (!nodesMap[subj]) { nodesMap[subj] = { id: subj, label: subj }; }
-						if (!nodesMap[obj]) {
-							nodesMap[obj] = st.object.termType === "Literal" ?
-								{ id: obj, label: st.object.value, literal: true } :
-								{ id: obj, label: obj };
-						}
-						edges.push({
-							id: "edge-" + edgeIdCounter++,
-							from: subj,
-							to: obj,
-							label: shortenLabel(st.predicate.value),
-							arrows: { to: { enabled: true, type: "arrow" } }
-						});
-					}
-				});
-				for (var id in nodesMap) {
-					if (!nodesMap[id].label) { nodesMap[id].label = id; }
-					var shortLabel = shortenLabel(nodesMap[id].label);
-					nodeState[id] = { expanded: true, baseLabel: shortLabel };
-					nodesMap[id].label = shortLabel + " [-]";
-					//nodesMap[id].shape = nodesMap[id].literal ? "box" : "circle";
-          nodesMap[id].shape = "box";
-				}
-        return { nodes: Object.values(nodesMap), edges: edges };
-			}
-
+        var nodesMap = {};
+        var edges = [];
+        var edgeIdCounter = 0;
+      
+        store.statements.forEach(function (st) {
+          const subjId = getNodeId(st.subject);
+          const pred = st.predicate.value;
+          const objId = st.object.termType === 'Literal' ? null : getNodeId(st.object);
+        
+          // Handle rdfs:label
+          if (pred === 'http://www.w3.org/2000/01/rdf-schema#label') {
+            if (!nodesMap[subjId]) {
+              nodesMap[subjId] = {
+                id: subjId,
+                label:  st.object.value + ' [-]',
+                shape: 'box'
+              };
+              nodeState[subjId] = { expanded: true, baseLabel: st.object.value };
+            } else {
+              nodesMap[subjId].label = st.object.value + ' [-]';
+              nodeState[subjId].baseLabel = st.object.value;
+            }
+            return;
+          }
+        
+          // Handle rdf:type
+          if (pred === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+            if (!nodesMap[subjId]) {
+              nodesMap[subjId] = {
+                id: subjId,
+                label: subjId + ' [-]',
+                shape: 'box',
+                type: st.object.value
+              };
+              nodeState[subjId] = { expanded: true, baseLabel: subjId };
+            } else {
+              nodesMap[subjId].type = st.object.value;
+            }
+            return;
+          }
+        
+          // Process other predicates
+          // Add subject node if not exists
+          if (!nodesMap[subjId]) {
+            nodesMap[subjId] = {
+              id: subjId,
+              label: subjId + ' [-]',
+              shape: 'box'
+            };
+            nodeState[subjId] = { expanded: true, baseLabel: subjId };
+          }
+        
+          // Add object node
+          let objLabel;
+          let objNodeId;
+          if (st.object.termType === 'Literal') {
+            // Handle literals by creating a unique ID
+            objNodeId = subjId + '-' + pred + '-literal-' + edgeIdCounter;
+            objLabel = st.object.value;
+            nodesMap[objNodeId] = {
+              id: objNodeId,
+              label: objLabel,
+              shape: 'box'
+            };
+          } else {
+            objNodeId = objId;
+            if (!nodesMap[objNodeId]) {
+              nodesMap[objNodeId] = {
+                id: objNodeId,
+                label: objNodeId + ' [-]',
+                shape: 'box'
+              };
+              nodeState[objNodeId] = { expanded: true, baseLabel: objNodeId };
+            }
+          }
+        
+          // Add edge
+          edges.push({
+            id: 'edge-' + edgeIdCounter++,
+            from: subjId,
+            to: objNodeId,
+            label: shortenLabel(pred),
+            arrows: { to: { enabled: true, type: 'arrow' } }
+          });
+        });
+      
+        // Convert nodesMap to array
+        var nodesArray = Object.values(nodesMap);
+      
+        return { nodes: nodesArray, edges: edges };
+      }
+      
 			// Color nodes based on their rdf:type namespace.
       function assignColors(nodes) {
         // Use a ColorBrewer qualitative palette from d3-scale-chromatic:
@@ -686,7 +769,8 @@
         }
       
         nodes.forEach(function(node) {
-          if (node.type && (node.type.startsWith("http://") || node.type.startsWith("https://"))) {
+          // Ensure node.type is defined and valid
+          if (node.type && typeof node.type === 'string' && (node.type.startsWith('http://') || node.type.startsWith('https://'))) {
             // Find the best matching prefix from knownPrefixes.
             var chosenPrefix = null;
             var chosenLength = 0;
@@ -699,23 +783,21 @@
             }
             if (chosenPrefix) {
               node.color = { background: localPrefixColor[chosenPrefix], border: "#000" };
-              node.title = "Type: " + shortenURI(node.type);
+              // node.title is already set in buildGraphFromStore
             } else {
               node.color = { background: "#CCCCCC", border: "#000" };
-              node.title = node.literal ? "Literal: " + node.label : "IRI: " + node.id;
+              // node.title is already set in buildGraphFromStore
             }
           } else {
             node.color = { background: "#CCCCCC", border: "#000" };
-            node.title = node.literal ? "Literal: " + node.label : "IRI: " + node.id;
+            // node.title is already set in buildGraphFromStore
           }
         });
-        
+      
         // Save the mapping globally so updateLegend can use it.
         prefixColorMapping = localPrefixColor;
         updateLegend();
       }
-      
-      
       
 
       // Update the legend – now showing full namespace under each prefix.
@@ -781,13 +863,22 @@
 				if (network) network.destroy();
 				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, options);
 				network.on("doubleClick", function (params) {
-					if (params.nodes.length > 0) {
-						toggleNode(params.nodes[0]);
-					}
-				});
+          if (params.nodes.length === 1) {
+            const nodeId = params.nodes[0];
+            if (network.isCluster(nodeId)) {
+              network.openCluster(nodeId);
+            } else {
+              toggleNode(nodeId);
+            }
+          }
+        });
+
+        // Apply clustering
+        applyClusteringByPredicate();
         applyEdgeFormat();
         applyLayoutPhysics();
 			}
+
       function renderGraph() {
         const graphData = buildGraphFromStore(store);
 	  		assignColors(graphData.nodes);
@@ -829,40 +920,106 @@
         network = new vis.Network(container, { nodes: new vis.DataSet(), edges: new vis.DataSet() }, options);
       }
       
+      // List of predicates to include in clustering
+      
+      function applyClusteringByPredicate() {
+        const predicateLabels = new Set();
 
+        networkEdges.get().forEach(edge => {
+          if (edge.label) {
+            // Include only predicates in the includedPredicates array
+            if (excludePredicatestoCluster.some(pred => edge.label.includes(pred))) return;
+            predicateLabels.add(edge.label);
+          }
+        });
+
+        predicateLabels.forEach(predicateLabel => {
+          clusterNodesByPredicate(predicateLabel);
+        });
+      }
+      
+      function clusterNodesByPredicate(predicateLabel) {
+        const clusterOptions = {
+          joinCondition: function(nodeOptions) {
+            const connectedEdges = network.getConnectedEdges(nodeOptions.id);
+            const count = connectedEdges.filter(edgeId => {
+              const edge = network.body.data.edges.get(edgeId);
+              return edge.label === predicateLabel;
+            }).length;
+            // Only include nodes with connections exceeding the threshold
+            return count > clusteringThreshold;
+          },
+          processProperties: function(clusterOptions, childNodes, childEdges) {
+            clusterOptions.label = predicateLabel + "\n(" + childNodes.length + " nodes)";
+            clusterOptions.shape = "circle";
+            clusterOptions.color = { background: '#FFC107', border: '#FF9800' }; // Customize color
+            clusterOptions.title = "Cluster of nodes connected via predicate: " + predicateLabel;
+            return clusterOptions;
+          },
+          clusterNodeProperties: { id: 'cluster:' + predicateLabel, borderWidth: 3, shape: 'circle' }
+        };
+      
+        network.cluster(clusterOptions);
+      }
 			// Toggle node expansion/collapse
 			function toggleNode(nodeId) {
-				var state = nodeState[nodeId];
-				if (!state) return;
-				if (state.expanded) {
-					collapseNode(nodeId);
-					state.expanded = false;
-					networkNodes.update({ id: nodeId, label: state.baseLabel + " [+]" });
-				} else {
-					expandNode(nodeId);
-					state.expanded = true;
-					networkNodes.update({ id: nodeId, label: state.baseLabel + " [-]" });
-				}
-			}
+        var state = nodeState[nodeId];
+        if (!state) return;
+
+        if (state.expanded) {
+          collapseNode(nodeId);
+          state.expanded = false;
+          network.body.data.nodes.update({ id: nodeId, label: state.baseLabel + " [+]" });
+        } else {
+          expandNode(nodeId);
+          state.expanded = true;
+          network.body.data.nodes.update({ id: nodeId, label: state.baseLabel + " [-]" });
+        }
+      }
 
 			function collapseNode(nodeId) {
-				var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
-				outEdges.forEach(function (edge) {
-					networkEdges.update({ id: edge.id, hidden: true });
-					var incoming = networkEdges.get({ filter: function (e) { return e.to === edge.to && !e.hidden; } });
-					if (incoming.length === 0) {
-						networkNodes.update({ id: edge.to, hidden: true });
-					}
-				});
-			}
+        // Fetch all outgoing edges from this node
+        var connectedEdges = network.getConnectedEdges(nodeId);
+      
+        connectedEdges.forEach(function(edgeId) {
+          var edge = network.body.data.edges.get(edgeId);
+          if (edge.from === nodeId) {
+            // Hide the edge
+            network.body.data.edges.update({ id: edgeId, hidden: true });
+            // Hide the connected node if it's not connected elsewhere
+            var connectedNodeId = edge.to;
+      
+            // Check if the connected node has other visible incoming edges
+            var incomingEdges = network.getConnectedEdges(connectedNodeId).filter(function(eid) {
+              var e = network.body.data.edges.get(eid);
+              return e.to === connectedNodeId && !e.hidden && e.from !== nodeId;
+            });
+      
+            if (incomingEdges.length === 0) {
+              // Recursively collapse the connected node
+              collapseNode(connectedNodeId);
+              network.body.data.nodes.update({ id: connectedNodeId, hidden: true });
+              nodeState[connectedNodeId].expanded = false;
+            }
+          }
+        });
+      }
 
 			function expandNode(nodeId) {
-				var outEdges = networkEdges.get({ filter: function (edge) { return edge.from === nodeId; } });
-				outEdges.forEach(function (edge) {
-					networkEdges.update({ id: edge.id, hidden: false });
-					networkNodes.update({ id: edge.to, hidden: false });
-				});
-			}
+        // Fetch all outgoing edges from this node
+        var connectedEdges = network.getConnectedEdges(nodeId);
+      
+        connectedEdges.forEach(function(edgeId) {
+          var edge = network.body.data.edges.get(edgeId);
+          if (edge.from === nodeId) {
+            // Show the edge
+            network.body.data.edges.update({ id: edgeId, hidden: false });
+            // Show the connected node
+            var connectedNodeId = edge.to;
+            network.body.data.nodes.update({ id: connectedNodeId, hidden: false });
+          }
+        });
+      }
 
 			// Make legend draggable
 			(function makeLegendDraggable() {
@@ -1094,7 +1251,7 @@
           const data = e.target.result;
           // Save the RDF data so it persists on reload:
           localStorage.setItem("rdfData", data);
-          parseRDF(data, "http://example.org/", "text/turtle")
+          parseRDF(data, "http://file.local/", "text/turtle")
             .then(function (store) {
               const graphData = buildGraphFromStore(store);
               assignColors(graphData.nodes);
@@ -1146,28 +1303,7 @@
           showError("Please enter a file URL.");
           return;
         }
-        fetch(fileUrl)
-          .then(response => {
-            if (!response.ok) throw new Error("Network response was not ok: " + response.statusText);
-            return response.text();
-          })
-          .then(data => {
-            localStorage.setItem("rdfData", data);
-            parseRDF(data, fileUrl, "text/turtle")
-              .then(function (store) {
-                const graphData = buildGraphFromStore(store);
-                assignColors(graphData.nodes);
-                renderNetwork(graphData);
-              })
-              .catch(function (err) {
-                console.error("Error parsing RDF from URL:", err);
-                showError("Error parsing RDF from URL: " + err.message);
-              });
-          })
-          .catch(err => {
-            console.error("Error fetching RDF file from URL:", err);
-            showError("Error fetching RDF file from URL: " + err.message);
-          });
+        loadFromURL(fileUrl);
       });
       
 			document.getElementById("layoutType").addEventListener("change", applyLayoutPhysics);
@@ -1223,14 +1359,16 @@
 			}
 
 			document.getElementById("expandAllButton").addEventListener("click", function () {
-				for (var nodeId in nodeState) {
-					if (!nodeState[nodeId].expanded) {
-						expandNode(nodeId);
-						nodeState[nodeId].expanded = true;
-						networkNodes.update({ id: nodeId, label: nodeState[nodeId].baseLabel + " [-]" });
-					}
-				}
-			});
+        network.body.data.nodes.get().forEach(function(node) {
+          if (!nodeState[node.id] || !nodeState[node.id].expanded) {
+            expandNode(node.id);
+            nodeState[node.id] = nodeState[node.id] || {};
+            nodeState[node.id].expanded = true;
+            nodeState[node.id].baseLabel = nodeState[node.id].baseLabel || node.label.replace(/\s[\[\]\+\-]+$/, '');
+            network.body.data.nodes.update({ id: node.id, label: nodeState[node.id].baseLabel + " [-]" });
+          }
+        });
+      });
 
 			document.getElementById("resetViewButton").addEventListener("click", function () {
 				if (network) network.fit();
