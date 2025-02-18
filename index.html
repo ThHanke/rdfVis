@@ -503,8 +503,7 @@
         knownPrefixes[newPrefix] = ns;
         return newPrefix + ":" + local;
       }
-      
-
+            
       function shortenLabel(label) {
         if (typeof label !== 'string') {
           if (label && typeof label.value === 'string') {
@@ -515,7 +514,12 @@
           }
         }
         if (label.startsWith("http://") || label.startsWith("https://")) {
-          return shortenURI(label);
+          const shortened = shortenURI(label);
+          // Check if the shortened version ends with a colon
+          if (shortened.endsWith(':')) {
+            return label; // Return the original label
+          }
+          return shortened; // Return the shortened version
         }
         return label;
       }
@@ -660,8 +664,20 @@
           return "unknown";
         }
       }
-      
-    
+
+      function NodeTitle(title,subtitle = "") {
+        // Start with the bold title
+        let result = "<b>" + title + "</b>";
+        
+        // Check if the subtitle is not empty
+        if (subtitle) {
+            // Add a newline and the subtitle if it is not empty
+            result += "\n" + subtitle;
+        }
+        return result;
+      }
+
+
 			// Build graph from store.
 			function buildGraphFromStore(store) {
         var nodesMap = {};
@@ -678,13 +694,15 @@
             if (!nodesMap[subjId]) {
               nodesMap[subjId] = {
                 id: subjId,
-                label:  st.object.value + ' [-]',
+                font: { multi: true },
+                label:  NodeTitle(shortenLabel(subjId),st.object.value)+ ' [-]',
                 shape: 'box'
               };
-              nodeState[subjId] = { expanded: true, baseLabel: st.object.value };
+              nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId),st.object.value) };
             } else {
-              nodesMap[subjId].label = st.object.value + ' [-]';
-              nodeState[subjId].baseLabel = st.object.value;
+              nodesMap[subjId].font= { multi: true };
+              nodesMap[subjId].label = NodeTitle(shortenLabel(subjId),st.object.value)+ ' [-]';
+              nodeState[subjId].baseLabel = NodeTitle(shortenLabel(subjId),st.object.value);
             }
             return;
           }
@@ -694,11 +712,12 @@
             if (!nodesMap[subjId]) {
               nodesMap[subjId] = {
                 id: subjId,
-                label: subjId + ' [-]',
+                font: { multi: true },
+                label: NodeTitle(shortenLabel(subjId))+ ' [-]',
                 shape: 'box',
                 type: st.object.value
               };
-              nodeState[subjId] = { expanded: true, baseLabel: subjId };
+              nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId)) };
             } else {
               nodesMap[subjId].type = st.object.value;
             }
@@ -710,10 +729,11 @@
           if (!nodesMap[subjId]) {
             nodesMap[subjId] = {
               id: subjId,
-              label: subjId + ' [-]',
+              font: { multi: true },
+              label: NodeTitle(shortenLabel(subjId))+ ' [-]',
               shape: 'box'
             };
-            nodeState[subjId] = { expanded: true, baseLabel: subjId };
+            nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId)) };
           }
         
           // Add object node
@@ -733,10 +753,11 @@
             if (!nodesMap[objNodeId]) {
               nodesMap[objNodeId] = {
                 id: objNodeId,
-                label: objNodeId + ' [-]',
+                font: { multi: true },
+                label: NodeTitle(shortenLabel(objNodeId))+ ' [-]',
                 shape: 'box'
               };
-              nodeState[objNodeId] = { expanded: true, baseLabel: objNodeId };
+              nodeState[objNodeId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(objNodeId)) };
             }
           }
         
@@ -792,6 +813,14 @@
             node.color = { background: "#CCCCCC", border: "#000" };
             // node.title is already set in buildGraphFromStore
           }
+          // Construct tooltip string with all properties
+          var tooltipContent = Object.entries(node)
+            .filter(([key]) => key !== 'shape' && key !== 'color') // Exclude 'shape' and 'color'
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n");
+
+          // Set the title property for the tooltip
+          node.title = tooltipContent;
         });
       
         // Save the mapping globally so updateLegend can use it.
@@ -998,8 +1027,12 @@
             if (incomingEdges.length === 0) {
               // Recursively collapse the connected node
               collapseNode(connectedNodeId);
+              console.log(connectedNodeId)
               network.body.data.nodes.update({ id: connectedNodeId, hidden: true });
-              nodeState[connectedNodeId].expanded = false;
+              // Ensure nodeState exists before updating
+              if (nodeState[connectedNodeId]) {
+                nodeState[connectedNodeId].expanded = false;
+              }
             }
           }
         });
