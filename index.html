@@ -33,19 +33,7 @@
         margin-left: 0;
       }
   
-      /* Legend styling – fixed to lower right of the viewport */
-      #legend {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 220px;
-        max-height: 300px; /* if you wish, keep a max-height */
-        overflow: auto;
-        z-index: 1001;
-        cursor: move;
-        resize: both; /* enable browser native resize if supported */
-      }
-      
+      /* Legend styling – fixed to lower right of the viewport */      
       #legendResizeHandle {
         position: absolute;
         bottom: 0;
@@ -55,28 +43,39 @@
         cursor: se-resize;
         background: rgba(0, 0, 0, 0.2);
       }
-      
-      
-  
-      #legend .legend-item {
-        display: flex;
-        flex-direction: column;
-        padding: 2px 5px;
-        border-bottom: 1px solid #eee;
+      #legend {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 220px; /* Default width */
+        max-height: 300px; /* Keep a max-height */
+        overflow: hidden; /* Prevent overflow */
+        z-index: 1001;
+        cursor: move;
+        resize: both; /* Enable browser native resize if supported */
       }
-  
-      #legend .legend-item:last-child {
-        border-bottom: none;
+      
+      #legend .row {
+          overflow: hidden; /* Prevent horizontal scrolling */
       }
-  
+      
+      .legend-text {
+          white-space: nowrap; /* Prevent text from wrapping */
+          overflow: hidden; /* Hide overflow */
+          text-overflow: ellipsis; /* Add ellipsis for long text */
+      }
+      
       #legend .legend-color {
-        display: inline-block;
         width: 15px;
         height: 15px;
-        margin-right: 5px;
-        border: 1px solid #000;
+        margin-right: 10px; /* Space between color box and prefix */
       }
-  
+      
+      #legend .legend-prefix {
+          flex: 1; /* Allow the prefix to take remaining space */
+          white-space: nowrap; /* Prevent text from wrapping */
+      }
+        
       /* Configuration Box Styling */
       #configBox {
         position: absolute;
@@ -268,7 +267,7 @@
                 <!-- Moveable Legend Box -->
                 <div id="legend" class="card">
                   <div class="card-header">Legend</div>
-                  <ul class="list-group list-group-flush" id="legendList"></ul>
+                  <div class="container" id="legendList"></ul>
                   <div id="legendResizeHandle"></div>
                 </div>
               </div>
@@ -368,23 +367,27 @@
       let startX, startY, startWidth, startHeight;
 
       resizer.addEventListener("mousedown", function(e) {
-        e.preventDefault();
-        startX = e.clientX;
-        startY = e.clientY;
-        startWidth = parseInt(window.getComputedStyle(legend).width, 10);
-        startHeight = parseInt(window.getComputedStyle(legend).height, 10);
-        document.documentElement.addEventListener("mousemove", doDrag, false);
-        document.documentElement.addEventListener("mouseup", stopDrag, false);
+          e.preventDefault();
+          startX = e.clientX;
+          startY = e.clientY;
+          startWidth = parseInt(window.getComputedStyle(legend).width, 10);
+          startHeight = parseInt(window.getComputedStyle(legend).height, 10);
+          
+          document.documentElement.addEventListener("mousemove", doDrag, false);
+          document.documentElement.addEventListener("mouseup", stopDrag, false);
       });
 
       function doDrag(e) {
-        legend.style.width = (startWidth + e.clientX - startX) + "px";
-        legend.style.height = (startHeight + e.clientY - startY) + "px";
+          const newWidth = Math.max(200, startWidth + e.clientX - startX); // Minimum width
+          const newHeight = Math.max(100, startHeight + e.clientY - startY); // Minimum height
+
+          legend.style.width = newWidth + "px";
+          legend.style.height = newHeight + "px";
       }
 
-      function stopDrag(e) {
-        document.documentElement.removeEventListener("mousemove", doDrag, false);
-        document.documentElement.removeEventListener("mouseup", stopDrag, false);
+      function stopDrag() {
+          document.documentElement.removeEventListener("mousemove", doDrag, false);
+          document.documentElement.removeEventListener("mouseup", stopDrag, false);
       }
     })();
 
@@ -394,50 +397,85 @@
 			var networkNodes = null;
 			var networkEdges = null;
 			var network = null;
+      var config = {};
 			var store = $rdf.graph();
       var prefixNamespaceMapping = {};
-			var knownPrefixes = {
-				rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-				rdfs: "http://www.w3.org/2000/01/rdf-schema#",
-				xsd: "http://www.w3.org/2001/XMLSchema#"
-			};
+			
       const excludePredicatestoCluster = ['rdf:type','rdfs:label','dcterms:','owl:'];
       const clusteringThreshold = 10;
 			var generatedPrefixCounter = 1;
-			var prefixNamespaceMapping = {}; // records all prefixes and their namespaces
-      var prefixColorMapping = {};     // records the colors for each prefix
-      // Keep track of each node's expansion state and base (shortened) label.
+			var graphData ={};     
       
-      var nodeState = {};
-			
 			var currentNodeRadius = 15;
 			var currentFontSize = 10;
 
       function saveConfigOptions() {
-        const config = {
-          layoutType: document.getElementById("layoutType").value,
-          physicsModel: document.getElementById("physicsModel").value,
-          connectionStyle: document.getElementById("connectionStyle").value,
-          hideIsolatedNodes: document.getElementById("hideIsolatedNodes").checked,
-          displayEdgeLabels: document.getElementById("displayEdgeLabels").checked,
-          disableImprovedLayout: document.getElementById("disableImprovedLayout").checked
-        };
         localStorage.setItem("visNetworkConfig", JSON.stringify(config));
       }
+      
       function loadConfigOptions() {
+        currentNodeRadius = 15;
+				currentFontSize = 10;
+        
+        const defaultConfig = {
+          layoutType: "hierarchical",
+          physicsModel: "disabled",
+          connectionStyle: "curved",
+          hideIsolatedNodes: true,
+          displayEdgeLabels: true,
+          disableImprovedLayout: false,
+          visNetwork: {
+            configure: {
+              enabled: false,
+              filter: ["physics"],
+              showButton: false,
+            },
+            layout: { hierarchical: {
+              enabled: true,
+              levelSeparation: 150,
+              nodeSpacing: 100,
+              treeSpacing: 200,
+              blockShifting: true,
+              edgeMinimization: true,
+              parentCentralization: true,
+              direction: 'UD',        // UD, DU, LR, RL
+              sortMethod: 'hubsize',  // hubsize, directed
+              shakeTowards: 'leaves'  // roots, leaves
+                },
+              improvedLayout: true
+            },
+            interaction: { hover: true },
+            edges: { smooth: { enabled: true, type: "continuous" } },
+            nodes: {
+              widthConstraint: { maximum: 100 },
+              font: { multi: true, size: currentFontSize },
+              shapeProperties: { useImageSize: false }
+            }
+          }
+        };
         const configStr = localStorage.getItem("visNetworkConfig");
+        let config = {};
+
         if (configStr) {
-          const config = JSON.parse(configStr);
-          document.getElementById("layoutType").value = config.layoutType || "hierarchical";
-          document.getElementById("physicsModel").value = config.physicsModel || "disabled";
-          document.getElementById("connectionStyle").value = config.connectionStyle || "curved";
-          document.getElementById("hideIsolatedNodes").checked = config.hideIsolatedNodes;
-          document.getElementById("displayEdgeLabels").checked = config.displayEdgeLabels;
-          document.getElementById("disableImprovedLayout").checked = config.disableImprovedLayout;
+            config = JSON.parse(configStr);
         }
+        // Merge config with defaultConfig
+        const finalConfig = Object.assign({}, defaultConfig, config);
+
+        // Set the values in the UI
+        document.getElementById("layoutType").value = finalConfig.layoutType;
+        document.getElementById("physicsModel").value = finalConfig.physicsModel;
+        document.getElementById("connectionStyle").value = finalConfig.connectionStyle;
+        document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
+        document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
+        document.getElementById("disableImprovedLayout").checked = finalConfig.disableImprovedLayout;
+        return finalConfig;
       }
 
-			// Helper: Create an SVG element with attributes.
+      //spawn worker
+      let worker = new Worker("worker.js");
+
+      // Helper: Create an SVG element with attributes.
 			function createSvgElement(tag, attrs) {
 				var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
 				for (var key in attrs) {
@@ -445,29 +483,6 @@
 				}
 				return elem;
 			}
-
-			// Helper: Wrap long labels into multiple lines.
-			function wrapLabel(label, maxLength) {
-        maxLength = maxLength || 15;
-        if (label.length <= maxLength) return label;
-        var words = label.split(" ");
-        var lines = [];
-        var currentLine = "";
-        words.forEach(function (word) {
-            if ((currentLine + word).length <= maxLength) {
-                currentLine += word + " ";
-            } else {
-                if (currentLine.trim()) { // Check if currentLine is not empty
-                    lines.push(currentLine.trim());
-                }
-                currentLine = word + " ";
-            }
-        });
-        if (currentLine.trim()) { // Check if currentLine is not empty
-            lines.push(currentLine.trim());
-        }
-        return lines.join("\n");
-      }
 
 			// Error display functions.
 			function showError(message) {
@@ -488,103 +503,8 @@
 			});
       
 
-			// Shorten URI – if base defined, use "base:".
-			function shortenURI(uri) {
-        if (knownPrefixes["base"] && uri.indexOf(knownPrefixes["base"]) === 0) {
-          return "base:" + uri.substring(knownPrefixes["base"].length);
-        }
-        // Filter out any undefined or non-string values.
-        var entries = Object.entries(knownPrefixes)
-          .filter(function ([p, ns]) {
-            return ns && typeof ns === "string";
-          })
-          .map(function ([p, ns]) {
-            return { prefix: (p === "" ? "base" : p), ns: ns };
-          });
-        entries.sort(function (a, b) {
-          return b.ns.length - a.ns.length;
-        });
-        for (var i = 0; i < entries.length; i++) {
-          var prefix = entries[i].prefix;
-          var ns = entries[i].ns;
-          if (uri.indexOf(ns) === 0) {
-            return prefix + ":" + uri.substring(ns.length);
-          }
-        }
-        var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
-        if (idx === -1) return uri;
-        var ns = uri.substring(0, idx + 1);
-        var local = uri.substring(idx + 1);
-        for (var key in knownPrefixes) {
-          if (knownPrefixes[key] === ns) {
-            var pfx = (key === "" ? "base" : key);
-            return pfx + ":" + local;
-          }
-        }
-        var newPrefix = "ns" + generatedPrefixCounter++;
-        knownPrefixes[newPrefix] = ns;
-        return newPrefix + ":" + local;
-      }
-            
-      function shortenLabel(label) {
-        if (typeof label !== 'string') {
-          if (label && typeof label.value === 'string') {
-            label = label.value;
-          } else {
-            console.error('Label is not a string:', label);
-            return '[Invalid label]';
-          }
-        }
-        if (label.startsWith("http://") || label.startsWith("https://")) {
-          const shortened = shortenURI(label);
-          // Check if the shortened version ends with a colon
-          if (shortened.endsWith(':')) {
-            return label; // Return the original label
-          }
-          return shortened; // Return the shortened version
-        }
-        return label;
-      }
-			// Parse RDF using rdflib (Turtle)
-			function parseRDF(data, baseUrl, contentType) {
-        return new Promise(function (resolve, reject) {
-          store = $rdf.graph();
-          // Reset knownPrefixes to avoid stale or undefined values.
-          knownPrefixes = {
-            rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-            rdfs: "http://www.w3.org/2000/01/rdf-schema#",
-            xsd: "http://www.w3.org/2001/XMLSchema#"
-          };
-          $rdf.parse(data, store, baseUrl, contentType, function (err) {
-            if (err) {
-              console.error("Error parsing RDF:", err);
-              return reject(new Error("Error parsing RDF: " + err.message));
-            }
-            try {
-              if (store.namespaces) {
-                if (store.namespaces[""]) {
-                  knownPrefixes["base"] = store.namespaces[""];
-                }
-                for (var prefix in store.namespaces) {
-                  if (store.namespaces.hasOwnProperty(prefix)) {
-                    let ns = store.namespaces[prefix];
-                    // Ensure ns is defined and a string before assignment.
-                    if (ns && typeof ns === "string" && !knownPrefixes[prefix]) {
-                      knownPrefixes[prefix] = ns;
-                    }
-                  }
-                }
-              }
-              resolve(store);
-            } catch (ex) {
-              console.error("Exception during RDF processing:", ex);
-              reject(new Error("Exception during RDF processing: " + ex.message));
-            }
-          });
-        });
-      }
-
-      // Helper function to perform fetch with a timeout.
+			
+			// Helper function to perform fetch with a timeout.
       function fetchWithTimeout(url, options = {}, timeout = 10000) {
         return new Promise((resolve, reject) => {
           const controller = new AbortController();
@@ -617,15 +537,7 @@
             })
             .then(data => {
               localStorage.setItem("rdfData", data);
-              parseRDF(data, sourceUrl, "text/turtle")
-                .then(store => {
-                  const graphData = buildGraphFromStore(store);
-                  assignColors(graphData.nodes);
-                  renderNetwork(graphData);
-                })
-                .catch(err => {
-                  console.error("Error parsing RDF from source URL:", err);
-                });
+              processRDFData(data, sourceUrl, "text/turtle")
             })
             .catch(err => {
               console.error("Error fetching RDF file from source URL:", err);
@@ -656,15 +568,7 @@
               return response.text();
             })
             .then(data => {
-              parseRDF(data, sparqlUrl, "text/turtle")
-                .then(store => {
-                  const graphData = buildGraphFromStore(store);
-                  assignColors(graphData.nodes);
-                  renderNetwork(graphData);
-                })
-                .catch(err => {
-                  console.error("Error parsing RDF from SPARQL URL:", err);
-                });
+              processRDFData(data, sourceUrl, "text/turtle")
             })
             .catch(err => {
               console.error("Error fetching SPARQL data from URL parameter:", err);
@@ -672,260 +576,104 @@
         }
       }
 
-      function getNodeId(node) {
-        if (node.termType === 'NamedNode') {
-          return node.value;
-        } else if (node.termType === 'BlankNode') {
-          // Use a custom prefix that avoids the ":" syntax
-          return "blank" + node.id;
-        } else if (node.termType === 'Collection') {
-          // Use a custom prefix that avoids the ":" syntax
-          return "collection" + node.id;
-        } else {
-          console.error('Unsupported node termType:', node.termType);
-          return "unknown";
-        }
-      }
-
-      function NodeTitle(title,subtitle = "") {
-        // Start with the bold title
-        let result = "<b>" + title + "</b>";
-        
-        // Check if the subtitle is not empty
-        if (subtitle) {
-            // Add a newline and the subtitle if it is not empty
-            result += "\n" + subtitle;
-        }
-        return result;
-      }
-
-
-			// Build graph from store.
-			function buildGraphFromStore(store) {
-        var nodesMap = {};
-        var edges = [];
-        var edgeIdCounter = 0;
-      
-        store.statements.forEach(function (st) {
-          const subjId = getNodeId(st.subject);
-          const pred = st.predicate.value;
-          const objId = st.object.termType === 'Literal' ? null : getNodeId(st.object);
-        
-          // Handle rdfs:label
-          if (pred === 'http://www.w3.org/2000/01/rdf-schema#label') {
-            if (!nodesMap[subjId]) {
-              nodesMap[subjId] = {
-                id: subjId,
-                font: { multi: true },
-                label:  NodeTitle(shortenLabel(subjId),st.object.value)+ ' [-]',
-                shape: 'box'
-              };
-              nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId),st.object.value) };
-            } else {
-              nodesMap[subjId].font= { multi: true };
-              nodesMap[subjId].label = NodeTitle(shortenLabel(subjId),st.object.value)+ ' [-]';
-              nodeState[subjId].baseLabel = NodeTitle(shortenLabel(subjId),st.object.value);
-            }
-            return;
-          }
-        
-          // Handle rdf:type
-          if (pred === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-            if (!nodesMap[subjId]) {
-              nodesMap[subjId] = {
-                id: subjId,
-                font: { multi: true },
-                label: NodeTitle(shortenLabel(subjId))+ ' [-]',
-                shape: 'box',
-                type: st.object.value
-              };
-              nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId)) };
-            } else {
-              nodesMap[subjId].type = st.object.value;
-            }
-            return;
-          }
-        
-          // Process other predicates
-          // Add subject node if not exists
-          if (!nodesMap[subjId]) {
-            nodesMap[subjId] = {
-              id: subjId,
-              font: { multi: true },
-              label: NodeTitle(shortenLabel(subjId))+ ' [-]',
-              shape: 'box'
-            };
-            nodeState[subjId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(subjId)) };
-          }
-        
-          // Add object node
-          let objLabel;
-          let objNodeId;
-          if (st.object.termType === 'Literal') {
-            // Handle literals by creating a unique ID
-            objNodeId = subjId + '-' + pred + '-literal-' + edgeIdCounter;
-            objLabel = st.object.value;
-            nodesMap[objNodeId] = {
-              id: objNodeId,
-              label: objLabel,
-              shape: 'box'
-            };
-          } else {
-            objNodeId = objId;
-            if (!nodesMap[objNodeId]) {
-              nodesMap[objNodeId] = {
-                id: objNodeId,
-                font: { multi: true },
-                label: NodeTitle(shortenLabel(objNodeId))+ ' [-]',
-                shape: 'box'
-              };
-              nodeState[objNodeId] = { expanded: true, baseLabel: NodeTitle(shortenLabel(objNodeId)) };
-            }
-          }
-        
-          // Add edge
-          edges.push({
-            id: 'edge-' + edgeIdCounter++,
-            from: subjId,
-            to: objNodeId,
-            label: shortenLabel(pred),
-            arrows: { to: { enabled: true, type: 'arrow' } }
-          });
+      function processRDFData(rdfData, baseUrl, contentType) {
+        worker.postMessage({
+          action: "parse",
+          rdfData: rdfData,
+          baseUrl: baseUrl,
+          contentType: contentType,
         });
-      
-        // Convert nodesMap to array
-        var nodesArray = Object.values(nodesMap);
-      
-        return { nodes: nodesArray, edges: edges };
       }
-      
-			// Color nodes based on their rdf:type namespace.
-      function assignColors(nodes) {
-        // Use a ColorBrewer qualitative palette from d3-scale-chromatic:
-        var palette = d3.schemeSet2; // an array of colors
-        var localPrefixColor = {};
-        var colorIndex = 0;
-        // Build the mapping from all prefixes in knownPrefixes
-        for (var prefix in knownPrefixes) {
-          localPrefixColor[prefix] = palette[colorIndex % palette.length];
-          colorIndex++;
-        }
-      
-        nodes.forEach(function(node) {
-          // Ensure node.type is defined and valid
-          if (node.type && typeof node.type === 'string' && (node.type.startsWith('http://') || node.type.startsWith('https://'))) {
-            // Find the best matching prefix from knownPrefixes.
-            var chosenPrefix = null;
-            var chosenLength = 0;
-            for (var prefix in knownPrefixes) {
-              var ns = knownPrefixes[prefix];
-              if (node.type.indexOf(ns) === 0 && ns.length > chosenLength) {
-                chosenPrefix = prefix;
-                chosenLength = ns.length;
-              }
-            }
-            if (chosenPrefix) {
-              node.color = { background: localPrefixColor[chosenPrefix], border: "#000" };
-              // node.title is already set in buildGraphFromStore
-            } else {
-              node.color = { background: "#CCCCCC", border: "#000" };
-              // node.title is already set in buildGraphFromStore
-            }
-          } else {
-            node.color = { background: "#CCCCCC", border: "#000" };
-            // node.title is already set in buildGraphFromStore
-          }
-          // Construct tooltip string with all properties
-          var tooltipContent = Object.entries(node)
-            .filter(([key]) => key !== 'shape' && key !== 'color') // Exclude 'shape' and 'color'
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n");
 
-          // Set the title property for the tooltip
-          node.title = tooltipContent;
-        });
-      
-        // Save the mapping globally so updateLegend can use it.
-        prefixColorMapping = localPrefixColor;
-        updateLegend();
-      }
+      worker.onmessage = function (event) {
+        if (event.data.status === "success") {
+          graphData=event.data.graphData;
+          renderNetwork();
+        } else if (event.data.status === "error") {
+          console.log(event.data)
+          showError("Error processing RDF: " + event.data.error);
+        }
+      };
       
 
-      // Update the legend – now showing full namespace under each prefix.
-      function updateLegend() {
-        var legendList = document.getElementById("legendList");
-        legendList.innerHTML = "";
-        for (var prefix in prefixColorMapping) {
-          var li = document.createElement("li");
-          li.className = "list-group-item legend-item";
-          li.innerHTML =
-            '<div style="display:flex; align-items:center;">' +
-              '<span class="legend-color" style="background:' + prefixColorMapping[prefix] + ';"></span>' +
-              '<strong>' + prefix + '</strong>' +
-            '</div>' +
-            '<div style="font-size:smaller; color:#555;">' + knownPrefixes[prefix] + '</div>';
-          legendList.appendChild(li);
+      function updateLegend(prefixColorMapping) {
+        var legendContainer = document.getElementById("legendList");
+        legendContainer.innerHTML = ""; // Clear previous legend
+    
+        for (const prefix in prefixColorMapping) {
+            if (prefixColorMapping.hasOwnProperty(prefix)) {
+                const { uri, color } = prefixColorMapping[prefix];
+
+                const rowItem = document.createElement("div");
+                rowItem.classList.add("row");
+                
+                const leftContainer = document.createElement("div");
+                leftContainer.classList.add("col-12", "col-md-6");
+    
+                const colorBox = document.createElement("span");
+                colorBox.classList.add("legend-color");
+                colorBox.style.backgroundColor = color;
+                colorBox.style.width = "15px";
+                colorBox.style.height = "15px";
+                colorBox.style.display = "inline-block";
+                colorBox.style.marginRight = "10px";
+                colorBox.style.border = "1px solid #000";
+    
+                const prefixLabel = document.createElement("span");
+                prefixLabel.innerText = prefix;
+                prefixLabel.classList.add("fw-bold", "legend-prefix");
+    
+                leftContainer.appendChild(colorBox);
+                leftContainer.appendChild(prefixLabel);
+                rowItem.appendChild(leftContainer);
+    
+                const uriText = document.createElement("div");
+                uriText.innerText = uri;
+                uriText.classList.add("col-12", "col-md-6", "text-muted", "small","legend-text");
+
+                rowItem.appendChild(uriText);
+                
+                legendContainer.appendChild(rowItem);
+            }
         }
-      }
+      }    
       
 			// Render network with options.
-			function renderNetwork(graphData) {
-        var hideIsolated = document.getElementById("hideIsolatedNodes").checked;
-        var displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
+			function renderNetwork() {
+        console.log(graphData)
         var connectedIds = new Set();
-        graphData.edges.forEach(function (edge) {
-					if (!displayEdgeLabels) edge.label = "";
+        var nodes = {};
+        var connections = {};
+        const configBoxContent = document.getElementById("configBoxContent");
+        config.visNetwork.configure.container=configBoxContent;
+        config.visNetwork.configure.enabled=true;
+        console.log(config)
+        graphData.network.edges.forEach(function (edge) {
           connectedIds.add(edge.from);
           connectedIds.add(edge.to);
         });
-        if (hideIsolated) {  
-          graphData.nodes = graphData.nodes.filter(function (n) { return connectedIds.has(n.id); });
+        if (config.hideIsolatedNodes) {  
+          networkNodes = new vis.DataSet(graphData.network.nodes.filter(function (n) { return connectedIds.has(n.id); }));
+        } else {
+          networkNodes = new vis.DataSet(graphData.network.nodes);
         }
-				
-        currentNodeRadius = 15;
-				currentFontSize = 10;
-				var layoutType = document.getElementById("layoutType").value;
-				var physicsModel = document.getElementById("physicsModel").value;
-				var displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
-				var layoutOption = layoutType === "hierarchical" ?
-					{ hierarchical: {
-            enabled: true,
-            levelSeparation: 150,
-            nodeSpacing: 100,
-            treeSpacing: 200,
-            blockShifting: true,
-            edgeMinimization: true,
-            parentCentralization: true,
-            direction: 'UD',        // UD, DU, LR, RL
-            sortMethod: 'hubsize',  // hubsize, directed
-            shakeTowards: 'leaves'  // roots, leaves
-          },
-            improvedLayout: !document.getElementById("disableImprovedLayout").checked } :
-					{ improvedLayout: !document.getElementById("disableImprovedLayout").checked };
-				var physicsOption = {};
-				var connectionStyle = document.getElementById("connectionStyle").value;
-				var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
-				var options = {
-					layout: layoutOption,
-					physics: physicsOption,
-					interaction: { hover: true },
-					edges: { smooth: smoothOption },
-					nodes: {
-						widthConstraint: { maximum: 100 },
-						font: { multi: true, size: currentFontSize },
-						shapeProperties: { useImageSize: false }
-					}
-				};
-        console.log(options)
-				networkNodes = new vis.DataSet(graphData.nodes);
-				networkEdges = new vis.DataSet(graphData.edges);
+				networkEdges = new vis.DataSet(graphData.network.edges);
 				networkNodes.forEach(function (node) {
 					node.size = currentNodeRadius;
 					networkNodes.update(node);
 				});
+        if (!config.displayEdgeLabels) {
+          networkEdges.forEach(function (edge) {
+            edge.label = "";
+          });
+        } else {
+          networkEdges.forEach(function (edge) {
+            edge.label = edge.baseLabel;
+          });
+        }
         
 				if (network) network.destroy();
-				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, options);
+				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, config.visNetwork);
 				network.on("doubleClick", function (params) {
           if (params.nodes.length === 1) {
             const nodeId = params.nodes[0];
@@ -941,48 +689,8 @@
         applyClusteringByPredicate();
         applyEdgeFormat();
         applyLayoutPhysics();
+        updateLegend(graphData.prefixColorMapping)
 			}
-
-      function renderGraph() {
-        const graphData = buildGraphFromStore(store);
-	  		assignColors(graphData.nodes);
-		  	renderNetwork(graphData);
-      }
-      function initializeNetwork() {
-        const container = document.getElementById("graphContainer");
-        const configBoxContent = document.getElementById("configBoxContent");
-        const options = {
-          layout: { hierarchical: { enabled: false, direction: "LR"} },
-          physics: {
-            enabled: true,
-            solver: "barnesHut",
-            barnesHut: {
-              theta: 0.5,
-              gravitationalConstant: -2000,
-              centralGravity: 0.3,
-              springLength: 95,
-              springConstant: 0.04,
-              damping: 0.09,
-              avoidOverlap: 0
-            },
-            stabilization: { enabled: true, iterations: 1000, updateInterval: 100, fit: true }
-          },
-          interaction: { hover: true },
-          edges: { smooth: false },
-          nodes: {
-            widthConstraint: { maximum: 100 },
-            font: { multi: true, size: currentFontSize },
-            shapeProperties: { useImageSize: false }
-          },
-          configure: {
-            enabled: true,
-            filter: ["physics"],
-            showButton: false,
-            container: configBoxContent, // Render config controls inside configBoxContent
-          },
-        };
-        network = new vis.Network(container, { nodes: new vis.DataSet(), edges: new vis.DataSet() }, options);
-      }
       
       // List of predicates to include in clustering
       
@@ -1027,17 +735,19 @@
       }
 			// Toggle node expansion/collapse
 			function toggleNode(nodeId) {
-        var state = nodeState[nodeId];
-        if (!state) return;
+        const node = graphData.network.nodes.find(node => node.id === nodeId);
+        console.log(nodeId);
+        console.log(node);
+        if (!node) return;
 
-        if (state.expanded) {
+        if (node.expanded) {
           collapseNode(nodeId);
-          state.expanded = false;
-          network.body.data.nodes.update({ id: nodeId, label: state.baseLabel + " [+]" });
+          node.expanded = false;
+          network.body.data.nodes.update({ id: nodeId, label: node.baseLabel + " [+]" });
         } else {
           expandNode(nodeId);
-          state.expanded = true;
-          network.body.data.nodes.update({ id: nodeId, label: state.baseLabel + " [-]" });
+          node.expanded = true;
+          network.body.data.nodes.update({ id: nodeId, label: node.baseLabel + " [-]" });
         }
       }
 
@@ -1064,8 +774,9 @@
               collapseNode(connectedNodeId);
               network.body.data.nodes.update({ id: connectedNodeId, hidden: true });
               // Ensure nodeState exists before updating
-              if (nodeState[connectedNodeId]) {
-                nodeState[connectedNodeId].expanded = false;
+              const connNode = graphData.network.nodes.find(node => node.id === connectedNodeId);
+              if (connNode) {
+                connNode.expanded = false;
               }
             }
           }
@@ -1280,30 +991,7 @@
 				document.body.removeChild(downloadLink);
 			}
 
-			window.onload = function () {
-        loadConfigOptions();
-        initializeNetwork();
-        window.scrollTo(0, 0);
-      
-        const savedData = localStorage.getItem("rdfData");
-        if (savedData) {
-          parseRDF(savedData, "http://example.org/", "text/turtle")
-            .then(store => {
-              const graphData = buildGraphFromStore(store);
-              assignColors(graphData.nodes);
-              renderNetwork(graphData);
-            })
-            .catch(err => showError("Error parsing RDF: " + err.message));
-        }
-        
-        // Load from URL parameters if provided.
-        loadFromURLParameters();
-      };
-      
-      
-      
-
-			document.getElementById("loadFileButton").addEventListener("click", function () {
+      document.getElementById("loadFileButton").addEventListener("click", function () {
         clearError();
         const fileInput = document.getElementById("fileInput");
         if (fileInput.files.length === 0) {
@@ -1317,53 +1005,12 @@
         };
         reader.onload = function (e) {
           const data = e.target.result;
-          // Save the RDF data so it persists on reload:
           localStorage.setItem("rdfData", data);
-          parseRDF(data, "http://file.local/", "text/turtle")
-            .then(function (store) {
-              const graphData = buildGraphFromStore(store);
-              assignColors(graphData.nodes);
-              renderNetwork(graphData);
-            })
-            .catch(function (err) {
-              showError("Error parsing RDF: " + err.message);
-            });
+          processRDFData(data, "http://file.local/", "text/turtle");
         };
         reader.readAsText(file);
       });
-      
-      
-			document.getElementById("loadSparqlButton").addEventListener("click", function () {
-				clearError();
-				const endpointUrl = document.getElementById("endpointUrl").value.trim();
-				const query = document.getElementById("sparqlQuery").value.trim();
-				if (!endpointUrl || !query) {
-					showError("Please provide both an endpoint URL and a SPARQL query.");
-					return;
-				}
-				fetch(endpointUrl, {
-					method: "POST",
-					headers: { "Content-Type": "application/sparql-query", "Accept": "text/turtle" },
-					body: query
-				})
-					.then(function (response) {
-						if (!response.ok) {
-							throw new Error("Network response was not ok: " + response.statusText);
-						}
-						return response.text();
-					})
-					.then(function (data) {
-						return parseRDF(data, endpointUrl, "text/turtle");
-					})
-					.then(function (store) {
-						const graphData = buildGraphFromStore(store);
-						assignColors(graphData.nodes);
-						renderNetwork(graphData);
-					})
-					.catch(function (err) {
-						showError("Error fetching or parsing SPARQL data: " + err.message);
-					});
-			});
+    
       document.getElementById("loadFileUrlButton").addEventListener("click", function () {
         clearError();
         const fileUrl = document.getElementById("fileUrlInput").value.trim();
@@ -1371,55 +1018,106 @@
           showError("Please enter a file URL.");
           return;
         }
-        loadFromURL(fileUrl);
+        fetch(fileUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network error: " + response.statusText);
+            }
+            return response.text();
+          })
+          .then(data => {
+            localStorage.setItem("rdfData", data);
+            processRDFData(data, fileUrl, "text/turtle");
+          })
+          .catch(err => {
+            showError("Error fetching RDF file: " + err.message);
+          });
       });
+    
+      document.getElementById("loadSparqlButton").addEventListener("click", function () {
+        clearError();
+        const endpointUrl = document.getElementById("endpointUrl").value.trim();
+        const query = document.getElementById("sparqlQuery").value.trim();
+        if (!endpointUrl || !query) {
+          showError("Please provide both an endpoint URL and a SPARQL query.");
+          return;
+        }
+        fetch(endpointUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/sparql-query", "Accept": "text/turtle" },
+          body: query,
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Network error: " + response.statusText);
+            }
+            return response.text();
+          })
+          .then(data => {
+            processRDFData(data, endpointUrl, "text/turtle");
+          })
+          .catch(err => {
+            showError("Error fetching SPARQL data: " + err.message);
+          });
+      });
+    
+      window.onload = function () {
+        config = loadConfigOptions();
+        clearError();
+        const savedData = localStorage.getItem("rdfData");
+        if (savedData) {
+          processRDFData(savedData, "http://example.org/", "text/turtle");
+        }
+      };
       
-			//document.getElementById("layoutType").addEventListener("change", applyLayoutPhysics);
-      //document.getElementById("physicsModel").addEventListener("change", applyLayoutPhysics);
-      //document.getElementById("connectionStyle").addEventListener("change", renderGraph);
-      //document.getElementById("hideIsolatedNodes").addEventListener("change", renderGraph);
-      //document.getElementById("displayEdgeLabels").addEventListener("change", renderGraph);
-			//document.getElementById("configBoxContent").addEventListener("change", function() {
-        // Re-render the network with updated configuration values
-      //  renderGraph();
-      //});
 
       document.getElementById("layoutType").addEventListener("change", function() {
+        config.layoutType=document.getElementById("layoutType").value;
         saveConfigOptions();
         applyLayoutPhysics();
-        renderGraph();
+        renderNetwork();
       });
     
       document.getElementById("physicsModel").addEventListener("change", function() {
+        config.layoutType=document.getElementById("physicsModel").value;
         saveConfigOptions();
-        renderGraph();
+        applyLayoutPhysics();
+        renderNetwork();
       });
     
       document.getElementById("connectionStyle").addEventListener("change", function() {
+        var connectionStyle = document.getElementById("connectionStyle").value;
+				var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
+        config.connectionStyle=connectionStyle;
+        config.visNetwork.edges={ smooth: smoothOption};
         saveConfigOptions();
-        renderGraph();
+        renderNetwork();
       });
     
       document.getElementById("hideIsolatedNodes").addEventListener("change", function() {
+        config.hideIsolatedNodes = document.getElementById("hideIsolatedNodes").checked;
         saveConfigOptions();
-        renderGraph();
+        renderNetwork();
       });
     
       document.getElementById("displayEdgeLabels").addEventListener("change", function() {
+        config.displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
         saveConfigOptions();
-        renderGraph();
+        renderNetwork();
       });
     
       document.getElementById("disableImprovedLayout").addEventListener("change", function() {
+        config.disableImprovedLayout = document.getElementById("disableImprovedLayout").checked
+        config.visNetwork.layout.improvedLayout=!document.getElementById("disableImprovedLayout").checked;
         saveConfigOptions();
-        renderGraph();
+        renderNetwork();
       });
     
       // Also save when the configuration box (generated by vis‑network) changes
       document.getElementById("configBoxContent").addEventListener("change", function() {
         syncConfigToSidebar();
         saveConfigOptions();
-        renderGraph();
+        renderNetwork();
       });
 
       function applyEdgeFormat() {
@@ -1466,14 +1164,11 @@
 			}
 
 			document.getElementById("expandAllButton").addEventListener("click", function () {
-        network.body.data.nodes.get().forEach(function(node) {
-          if (!nodeState[node.id] || !nodeState[node.id].expanded) {
-            expandNode(node.id);
-            nodeState[node.id] = nodeState[node.id] || {};
-            nodeState[node.id].expanded = true;
-            nodeState[node.id].baseLabel = nodeState[node.id].baseLabel || node.label.replace(/\s[\[\]\+\-]+$/, '');
-            network.body.data.nodes.update({ id: node.id, label: nodeState[node.id].baseLabel + " [-]" });
-          }
+        const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
+        collapsedNodes.forEach(node => {
+          expandNode(node.id);
+          network.body.data.nodes.update({ id: node.id, label: node.baseLabel + " [-]" });
+          node.expanded=true;
         });
       });
 
@@ -1491,15 +1186,18 @@
       function exportDOT() {
         let dotStr = "digraph G {\n";
         networkNodes.get().forEach(node => {
-          dotStr += `  "${node.id}" [label="${node.label}"];\n`;
+            // Extract the text between <b></b> tags using regex
+            const labelMatch = node.label.match(/<b>(.*?)<\/b>/);
+            const labelText = labelMatch ? labelMatch[1] : node.label; // Fallback to original label if no match
+            dotStr += `  "${node.id}" [label="${labelText}"];\n`;
         });
         networkEdges.get().forEach(edge => {
-          // Only include a label if available
-          const label = edge.label ? ` [label="${edge.label}"]` : "";
-          dotStr += `  "${edge.from}" -> "${edge.to}"${label};\n`;
+            // Only include a label if available
+            const label = edge.label ? ` [label="${edge.label}"]` : "";
+            dotStr += `  "${edge.from}" -> "${edge.to}"${label};\n`;
         });
         dotStr += "}\n";
-        
+    
         const blob = new Blob([dotStr], { type: "text/plain;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const downloadLink = document.createElement("a");
@@ -1535,7 +1233,7 @@
       // Listen for changes in the config box (generated by vis-network)
       document.getElementById("configBoxContent").addEventListener("change", function () {
         // Re-render or update your network as needed.
-        renderGraph();
+        renderNetwork();
         // Sync the sidebar values.
         syncConfigToSidebar();
       });
@@ -1577,7 +1275,7 @@
             sidebarPhysicsSelect.disabled = true;
             sidebarPhysicsSelect.value = "disabled";
           }
-          renderGraph();
+          renderNetwork();
         }
       });
 
