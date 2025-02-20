@@ -32,28 +32,68 @@
       .container-fluid.expanded {
         margin-left: 0;
       }
-  
-      /* Legend styling – fixed to lower right of the viewport */      
-      #legendResizeHandle {
+      
+      .card {
+        position: absolute;
+        cursor: move;
+      }
+      .resize-handle {
+        width: 16px;
+        height: 16px;
         position: absolute;
         bottom: 0;
         right: 0;
-        width: 15px;
-        height: 15px;
         cursor: se-resize;
         background: rgba(0, 0, 0, 0.2);
       }
-      #legend {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 220px; /* Default width */
-        max-height: 300px; /* Keep a max-height */
-        overflow: hidden; /* Prevent overflow */
-        z-index: 1001;
+      .card-header {
         cursor: move;
-        resize: both; /* Enable browser native resize if supported */
       }
+
+      #configBox {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 20%;
+        height: 50%;
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        display: none; /* Hidden by default */
+      }
+      
+      #configBoxContent {
+        flex-grow: 1; /* Ensures it fills the space */
+        overflow-y: auto; /* Makes it scrollable when needed */
+        padding: 10px;
+        max-height: calc(100% - 40px); /* Adjust based on header/footer */
+      }
+      
+      #legend {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 25%;
+        height: 50%;
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #legendList {
+        flex-grow: 1;
+        overflow-y: auto; /* Scrollable if needed */
+        padding: 10px;
+      }
+      
       
       #legend .row {
           overflow: hidden; /* Prevent horizontal scrolling */
@@ -76,48 +116,12 @@
           white-space: nowrap; /* Prevent text from wrapping */
       }
         
-      /* Configuration Box Styling */
-      #configBox {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 300px;
-        background-color: #ffffff;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
-        display: none; /* Hidden by default */
-        flex-direction: column;
-      }
-  
       #configBox.hidden {
         height: 40px;
         overflow: hidden;
       }
   
-      #configBoxHeader {
-        background-color: #f1f1f1;
-        padding: 10px;
-        cursor: move;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #dee2e6;
-      }
-  
-      #configBoxContent {
-        padding: 10px;
-        overflow-y: auto;
-        max-height: 400px; /* Set a maximum height */
-      }
-  
-      #minimizeBtn {
-        background: none;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-      }
+      
       #mainContent {
         position: relative;
       }
@@ -212,16 +216,6 @@
                     <option value="straight">Straight</option>
                   </select>
                 </div>
-                <div class="mb-2">
-                  <label for="physicsModel" class="form-label">Physics Model:</label>
-                  <select id="physicsModel" class="form-select form-select-sm">
-                    <option value="barnesHut">Barnes-Hut</option>
-                    <option value="forceAtlas2Based">Force Atlas 2 Based</option>
-                    <option value="repulsion">Repulsion</option>
-                    <option value="hierarchicalRepulsion">Hierarchical Repulsion</option>
-                    <option value="disabled" selected>Disabled</option>
-                  </select>
-                </div>
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
                   <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
@@ -255,20 +249,20 @@
                   <!-- Graph renders here -->
                 </div>
                 <!-- Configuration Box floating at top left -->
-                <div id="configBox">
-                  <div id="configBoxHeader">
+                <div id="configBox" class="card">
+                  <div id="configBoxHeader" class="card-header">
                     <span>Configuration</span>
-                    <button id="minimizeBtn">&minus;</button>
                   </div>
-                  <div id="configBoxContent">
+                  <div id="configBoxContent" class="card-body">
                     <!-- vis-network configuration controls will appear here -->
                   </div>
+                  <div class="resize-handle"></div>
                 </div>
                 <!-- Moveable Legend Box -->
                 <div id="legend" class="card">
                   <div class="card-header">Legend</div>
-                  <div class="container" id="legendList"></ul>
-                  <div id="legendResizeHandle"></div>
+                  <div class="card-body" id="legendList"></div>
+                  <div class="resize-handle"></div>
                 </div>
               </div>
             </main>
@@ -292,25 +286,9 @@
       mainContent.classList.toggle("expanded");
     });
 
-    // Configuration Box Minimize/Restore Functionality
-    const minimizeBtn = document.getElementById("minimizeBtn");
-    const configBox = document.getElementById("configBox");
-    const configBoxContent = document.getElementById("configBoxContent");
-    let isConfigMinimized = false;
-
-    minimizeBtn.addEventListener("click", () => {
-      isConfigMinimized = !isConfigMinimized;
-      if (isConfigMinimized) {
-        configBox.classList.add("hidden");
-        minimizeBtn.innerHTML = "+";
-      } else {
-        configBox.classList.remove("hidden");
-        minimizeBtn.innerHTML = "&minus;";
-      }
-    });
-
     // Toggle Config Box from Navbar button
     document.getElementById("toggleConfigBox").addEventListener("click", () => {
+      const configBox = document.getElementById("configBox");
       if (configBox.style.display === "none" || configBox.style.display === "") {
         configBox.style.display = "flex";
       } else {
@@ -318,38 +296,6 @@
       }
     });
 
-      // Make Configuration Box Draggable
-      (function makeConfigBoxDraggable() {
-        const header = document.getElementById("configBoxHeader");
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-      header.onmousedown = dragMouseDown;
-
-      function dragMouseDown(e) {
-        e = e || window.event;
-        e.preventDefault();
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-      }
-
-      function elementDrag(e) {
-        e = e || window.event;
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        configBox.style.top = (configBox.offsetTop - pos2) + "px";
-        configBox.style.left = (configBox.offsetLeft - pos1) + "px";
-      }
-
-      function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-      }
-    })();
     // Toggle legend visibility when the "Legend" button is clicked.
     document.getElementById("toggleLegend").addEventListener("click", function() {
       const legend = document.getElementById("legend");
@@ -359,38 +305,70 @@
         legend.style.display = "none";
       }
     });
-
-    // Make legend resizable using the custom resize handle.
-    (function makeLegendResizable() {
-      const legend = document.getElementById("legend");
-      const resizer = document.getElementById("legendResizeHandle");
-      let startX, startY, startWidth, startHeight;
-
-      resizer.addEventListener("mousedown", function(e) {
-          e.preventDefault();
-          startX = e.clientX;
-          startY = e.clientY;
-          startWidth = parseInt(window.getComputedStyle(legend).width, 10);
-          startHeight = parseInt(window.getComputedStyle(legend).height, 10);
-          
-          document.documentElement.addEventListener("mousemove", doDrag, false);
-          document.documentElement.addEventListener("mouseup", stopDrag, false);
+    // Select all cards for dragging and resizing
+    const cards = document.querySelectorAll('.card');
+  
+    cards.forEach(card => {
+      const header = card.querySelector('.card-header');
+      const resizeHandle = card.querySelector('.resize-handle');
+      let isDragging = false;
+      let isResizing = false;
+      let offsetX, offsetY;
+  
+      // Get the viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+  
+      // Draggable functionality (always applied)
+      header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - card.offsetLeft;
+        offsetY = e.clientY - card.offsetTop;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', () => {
+          isDragging = false;
+          document.removeEventListener('mousemove', onMouseMove);
+        });
       });
-
-      function doDrag(e) {
-          const newWidth = Math.max(200, startWidth + e.clientX - startX); // Minimum width
-          const newHeight = Math.max(100, startHeight + e.clientY - startY); // Minimum height
-
-          legend.style.width = newWidth + "px";
-          legend.style.height = newHeight + "px";
+  
+      function onMouseMove(e) {
+        if (isDragging) {
+          let newLeft = e.clientX - offsetX;
+          let newTop = e.clientY - offsetY;
+      
+          // Ensure it stays within the viewport
+          newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - card.offsetWidth));
+          newTop = Math.max(0, Math.min(newTop, window.innerHeight - card.offsetHeight));
+      
+          card.style.left = `${newLeft}px`;
+          card.style.top = `${newTop}px`;
+        }
       }
-
-      function stopDrag() {
-          document.documentElement.removeEventListener("mousemove", doDrag, false);
-          document.documentElement.removeEventListener("mouseup", stopDrag, false);
+  
+      // Resizable functionality (only if a resize handle exists)
+      if (resizeHandle) {
+        resizeHandle.addEventListener('mousedown', (e) => {
+          isResizing = true;
+          document.addEventListener('mousemove', onMouseResize);
+          document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.removeEventListener('mousemove', onMouseResize);
+          });
+        });
+  
+        function onMouseResize(e) {
+          if (isResizing) {
+            // Resize the card based on mouse position
+            const newWidth = e.clientX - card.offsetLeft;
+            const newHeight = e.clientY - card.offsetTop;
+  
+            // Update card size
+            card.style.width = `${newWidth}px`;
+            card.style.height = `${newHeight}px`;
+          }
+        }
       }
-    })();
-
+    });    
     </script>
 		<script>
 			// Global variables
@@ -419,7 +397,6 @@
         
         const defaultConfig = {
           layoutType: "hierarchical",
-          physicsModel: "disabled",
           connectionStyle: "curved",
           hideIsolatedNodes: true,
           displayEdgeLabels: true,
@@ -438,7 +415,7 @@
               blockShifting: true,
               edgeMinimization: true,
               parentCentralization: true,
-              direction: 'UD',        // UD, DU, LR, RL
+              direction: 'LR',        // UD, DU, LR, RL
               sortMethod: 'hubsize',  // hubsize, directed
               shakeTowards: 'leaves'  // roots, leaves
                 },
@@ -460,11 +437,20 @@
             config = JSON.parse(configStr);
         }
         // Merge config with defaultConfig
-        const finalConfig = Object.assign({}, defaultConfig, config);
+        //const finalConfig = Object.assign({}, defaultConfig, config);
+        // Merge config with defaultConfig, prioritizing config properties
+        const finalConfig = {
+          ...defaultConfig,
+          ...config
+        };
 
+        const layoutType = document.getElementById("layoutType").value;
+				if (config.visNetwork.layout.hierarchical.enabled) {
+          document.getElementById("layoutType").value="hierarchical";
+        } else {
+          document.getElementById("layoutType").value="force";
+        }
         // Set the values in the UI
-        document.getElementById("layoutType").value = finalConfig.layoutType;
-        document.getElementById("physicsModel").value = finalConfig.physicsModel;
         document.getElementById("connectionStyle").value = finalConfig.connectionStyle;
         document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
         document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
@@ -608,7 +594,7 @@
                 rowItem.classList.add("row");
                 
                 const leftContainer = document.createElement("div");
-                leftContainer.classList.add("col-12", "col-md-6");
+                leftContainer.classList.add("col-12", "col-md-3");
     
                 const colorBox = document.createElement("span");
                 colorBox.classList.add("legend-color");
@@ -629,7 +615,7 @@
     
                 const uriText = document.createElement("div");
                 uriText.innerText = uri;
-                uriText.classList.add("col-12", "col-md-6", "text-muted", "small","legend-text");
+                uriText.classList.add("col-12", "col-md-9", "text-muted", "small","legend-text");
 
                 rowItem.appendChild(uriText);
                 
@@ -644,9 +630,6 @@
         var connectedIds = new Set();
         var nodes = {};
         var connections = {};
-        const configBoxContent = document.getElementById("configBoxContent");
-        config.visNetwork.configure.container=configBoxContent;
-        config.visNetwork.configure.enabled=true;
         console.log(config)
         graphData.network.edges.forEach(function (edge) {
           connectedIds.add(edge.from);
@@ -688,7 +671,6 @@
         // Apply clustering
         applyClusteringByPredicate();
         applyEdgeFormat();
-        applyLayoutPhysics();
         updateLegend(graphData.prefixColorMapping)
 			}
       
@@ -798,35 +780,6 @@
           }
         });
       }
-
-			// Make legend draggable
-			(function makeLegendDraggable() {
-				var legend = document.getElementById("legend");
-				var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-				legend.onmousedown = dragMouseDown;
-				function dragMouseDown(e) {
-					e = e || window.event;
-					e.preventDefault();
-					pos3 = e.clientX;
-					pos4 = e.clientY;
-					document.onmouseup = closeDragElement;
-					document.onmousemove = elementDrag;
-				}
-				function elementDrag(e) {
-					e = e || window.event;
-					e.preventDefault();
-					pos1 = pos3 - e.clientX;
-					pos2 = pos4 - e.clientY;
-					pos3 = e.clientX;
-					pos4 = e.clientY;
-					legend.style.top = (legend.offsetTop - pos2) + "px";
-					legend.style.left = (legend.offsetLeft - pos1) + "px";
-				}
-				function closeDragElement() {
-					document.onmouseup = null;
-					document.onmousemove = null;
-				}
-			})();
 
 			// Export SVG helper function for element creation.
 			function createSvgElement(tag, attrs) {
@@ -1063,6 +1016,10 @@
     
       window.onload = function () {
         config = loadConfigOptions();
+
+        const configBoxContent = document.getElementById("configBoxContent");
+        config.visNetwork.configure.container=configBoxContent;
+        config.visNetwork.configure.enabled=true;
         clearError();
         const savedData = localStorage.getItem("rdfData");
         if (savedData) {
@@ -1072,16 +1029,15 @@
       
 
       document.getElementById("layoutType").addEventListener("change", function() {
-        config.layoutType=document.getElementById("layoutType").value;
+        const layoutType = document.getElementById("layoutType").value;
+				if (layoutType === "hierarchical" ) {
+          config.visNetwork.layout.hierarchical.enabled=true;
+        } else {
+          config.visNetwork.layout.hierarchical.enabled=false;
+        }
+        config.layoutType=layoutType;
+        //network.setOptions({ configBox });
         saveConfigOptions();
-        applyLayoutPhysics();
-        renderNetwork();
-      });
-    
-      document.getElementById("physicsModel").addEventListener("change", function() {
-        config.layoutType=document.getElementById("physicsModel").value;
-        saveConfigOptions();
-        applyLayoutPhysics();
         renderNetwork();
       });
     
@@ -1112,13 +1068,6 @@
         saveConfigOptions();
         renderNetwork();
       });
-    
-      // Also save when the configuration box (generated by vis‑network) changes
-      document.getElementById("configBoxContent").addEventListener("change", function() {
-        syncConfigToSidebar();
-        saveConfigOptions();
-        renderNetwork();
-      });
 
       function applyEdgeFormat() {
         const displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
@@ -1128,41 +1077,7 @@
           });
         }
       }
-			function applyLayoutPhysics() {
-				const layoutType = document.getElementById("layoutType").value;
-				const physicsModel = document.getElementById("physicsModel").value;
-				let layoutOption = layoutType === "hierarchical" ?
-					{ hierarchical: { enabled: true, direction: "LR", sortMethod: "directed", edgeMinimization: true } } :
-					{ hierarchical: { enabled: false } };
-				let physicsOption = {};
-				if (physicsModel !== "disabled") {
-					physicsOption = { enabled: true, solver: physicsModel };
-					switch (physicsModel) {
-						case "barnesHut":
-							physicsOption.barnesHut = { theta: 0.5, gravitationalConstant: -2000, centralGravity: 0.3, springLength: 95, springConstant: 0.04, damping: 0.09, avoidOverlap: 0 };
-							break;
-						case "forceAtlas2Based":
-							physicsOption.forceAtlas2Based = { theta: 0.5, gravitationalConstant: -50, centralGravity: 0.01, springLength: 100, springConstant: 0.08, damping: 0.4, avoidOverlap: 0 };
-							break;
-						case "repulsion":
-							physicsOption.repulsion = { centralGravity: 0.2, springLength: 200, springConstant: 0.05, nodeDistance: 100, damping: 0.09 };
-							break;
-						case "hierarchicalRepulsion":
-							physicsOption.hierarchicalRepulsion = { centralGravity: 0.0, springLength: 100, springConstant: 0.01, nodeDistance: 120, damping: 0.09, avoidOverlap: 0 };
-							break;
-						default:
-							break;
-					}
-					physicsOption.stabilization = { enabled: true, iterations: 1000, updateInterval: 100, fit: true };
-					physicsOption.timestep = 0.5;
-					physicsOption.adaptiveTimestep = true;
-				} else {
-					physicsOption = { enabled: false };
-				}
-				networkNodes.get().forEach(function (node) {});
-				network.setOptions({ layout: layoutOption, physics: physicsOption });
-			}
-
+			
 			document.getElementById("expandAllButton").addEventListener("click", function () {
         const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
         collapsedNodes.forEach(node => {
@@ -1207,79 +1122,6 @@
         downloadLink.click();
         document.body.removeChild(downloadLink);
       }
-      // Synchronize the physics configuration between the config box and sidebar select.
-      function syncConfigToSidebar() {
-        // Find the physics enabled checkbox inside the config box.
-        // (Assuming the first vis-config-checkbox corresponds to physics enabled.)
-        const physicsCheckbox = document.querySelector("#configBoxContent input.vis-config-checkbox");
-        // Find the solver select element inside the config box.
-        const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
-        // Get the sidebar physics model select.
-        const sidebarPhysicsSelect = document.getElementById("physicsModel");
-
-        if (physicsCheckbox && solverSelect && sidebarPhysicsSelect) {
-          if (!physicsCheckbox.checked) { 
-            // Physics is disabled; update the sidebar accordingly.
-            sidebarPhysicsSelect.value = "disabled";
-            sidebarPhysicsSelect.disabled = true;
-          } else {
-            sidebarPhysicsSelect.disabled = false;
-            // If physics is enabled, sync the selected solver from the config box.
-            sidebarPhysicsSelect.value = solverSelect.value;
-          }
-        }
-      }
-
-      // Listen for changes in the config box (generated by vis-network)
-      document.getElementById("configBoxContent").addEventListener("change", function () {
-        // Re-render or update your network as needed.
-        renderNetwork();
-        // Sync the sidebar values.
-        syncConfigToSidebar();
-      });
-
-      // Listen for changes on the sidebar physics model select.
-      document.getElementById("physicsModel").addEventListener("change", function () {
-        const sidebarValue = this.value;
-        // Find the corresponding controls inside the config box.
-        const physicsCheckbox = document.querySelector("#configBoxContent input.vis-config-checkbox");
-        const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
-
-        if (physicsCheckbox && solverSelect) {
-          if (sidebarValue === "disabled") {
-            // Uncheck the physics checkbox if the sidebar select is set to "disabled".
-            physicsCheckbox.checked = false;
-            // Trigger change event to propagate the update.
-            physicsCheckbox.dispatchEvent(new Event("change"));
-          } else {
-            // Enable physics by checking the checkbox.
-            physicsCheckbox.checked = true;
-            // Set the solver select in the config box to match the sidebar.
-            solverSelect.value = sidebarValue;
-            // Trigger change events on both elements.
-            physicsCheckbox.dispatchEvent(new Event("change"));
-            solverSelect.dispatchEvent(new Event("change"));
-          }
-        }
-      });
-      // Listen for changes on the physics enabled checkbox in the config box.
-      document.addEventListener("change", function(e) {
-        if (e.target.matches("#configBoxContent input.vis-config-checkbox")) {
-          const isEnabled = e.target.checked;
-          const sidebarPhysicsSelect = document.getElementById("physicsModel");
-          if (isEnabled) {
-            sidebarPhysicsSelect.disabled = false;
-            const solverSelect = document.querySelector("#configBoxContent select.vis-config-select");
-            sidebarPhysicsSelect.value = solverSelect ? solverSelect.value : "barnesHut";
-          } else {
-            sidebarPhysicsSelect.disabled = true;
-            sidebarPhysicsSelect.value = "disabled";
-          }
-          renderNetwork();
-        }
-      });
-
-
 		</script>
 	</body>
 </html>

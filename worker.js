@@ -10,14 +10,36 @@ var knownPrefixes = {
   rdfs: "http://www.w3.org/2000/01/rdf-schema#",
   xsd: "http://www.w3.org/2001/XMLSchema#"
 };
-const DS_COLOR_PALETTE = [
-    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
-    "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5",
-    "#c49c94", "#f7b6d2", "#c7c7c7", "#dbdb8d", "#9edae5",
-    "#393b79", "#637939", "#8c6d31", "#843c39", "#7b4173",
-    "#5254a3", "#8ca252", "#bd9e39", "#ad494a", "#a55194"
-  ];
+const COLOR_PALETTE = [
+  '#FFB3BA',  // Pastellrot
+  '#FFDFBA',  // Pastellorange
+  '#FFFFBA',  // Pastellgelb
+  '#BAFFC9',  // Pastellgrün
+  '#BAE1FF',  // Pastellblau
+  '#E6BEFF',  // Pastelllila
+  '#F4C2C2',  // Babyrosa
+  '#FFDEAD',  // Navajo-Weiß
+  '#FFFACD',  // Zitronenschale
+  '#E0FFFF',  // Hellzyan
+  '#D8BFD8',  // Flieder
+  '#FFC0CB',  // Pink
+  '#F5F5DC',  // Beige
+  '#D3FFCE',  // Teagrün
+  '#E0B0FF',  // Malve
+  '#F0E68C',  // Khaki
+  '#FFDAB9',  // Pfirsich
+  '#E6E6FA',  // Lavendel
+  '#FFF0F5',  // Lavendelblush
+  '#F5DEB3',  // Weizen
+]
+// const COLOR_PALETTE = [
+//     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+//     "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+//     "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5",
+//     "#c49c94", "#f7b6d2", "#c7c7c7", "#dbdb8d", "#9edae5",
+//     "#393b79", "#637939", "#8c6d31", "#843c39", "#7b4173",
+//     "#5254a3", "#8ca252", "#bd9e39", "#ad494a", "#a55194"
+//   ];
 var generatedPrefixCounter = 1;
 			
 function parseRDFInWorker(data, baseUrl, contentType) {
@@ -222,7 +244,7 @@ function assignColorsToNodes(nodes,prefixMapping) {
   // Build mapping for each known prefix.
   let valueColorMap = {};
   for (var prefix in prefixMapping) {
-    valueColorMap[prefix]= { uri: prefixMapping[prefix], color: DS_COLOR_PALETTE[colorIndex % DS_COLOR_PALETTE.length]};
+    valueColorMap[prefix]= { uri: prefixMapping[prefix], color: COLOR_PALETTE[colorIndex % COLOR_PALETTE.length]};
     colorIndex++;
   }
   
