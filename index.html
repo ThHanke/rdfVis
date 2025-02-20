@@ -658,7 +658,97 @@
         }
         
 				if (network) network.destroy();
+        
 				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, config.visNetwork);
+        // Apply clustering based on subject and predicate grouping
+        applyClusteringBySubjectPredicate();
+
+        // Helper function: re-cluster based on incoming connections grouped by (from, baseLabel)
+        function reClusterIncoming(nodeId) {
+          // Verify the node exists; if not, open the cluster and exit.
+          const nodeData = network.body.data.nodes.get(nodeId);
+          if (!nodeData) {
+            if (network.isCluster(nodeId)) {
+              network.openCluster(nodeId);
+            }
+            return;
+          }
+
+          // Get all incoming edges where the clicked node is the target.
+          const incomingEdges = network.getConnectedEdges(nodeId).filter(eid => {
+            const edge = network.body.data.edges.get(eid);
+            return edge && edge.to === nodeId;
+          });
+          if (!incomingEdges.length) return;
+
+          // For each incoming edge, group by its subject and baseLabel.
+          // The key will be: "subject|baseLabel"
+          const groupings = {};
+          incomingEdges.forEach(eid => {
+            const edge = network.body.data.edges.get(eid);
+            if (!edge || !edge.baseLabel) return;
+            // Skip any predicate that should be excluded.
+            if (excludePredicatestoCluster.some(pred => edge.baseLabel.includes(pred))) return;
+            
+            const key = edge.from + "|" + edge.baseLabel;
+            if (!groupings[key]) {
+              groupings[key] = {
+                subject: edge.from,
+                predicate: edge.baseLabel,
+                targets: new Set()
+              };
+              // Look up all edges in the network that match this subject and predicate.
+              networkEdges.get().forEach(e => {
+                if (e.from === edge.from && e.baseLabel === edge.baseLabel) {
+                  groupings[key].targets.add(e.to);
+                }
+              });
+            }
+          });
+
+          // For each grouping, if the number of target nodes exceeds the threshold, create a cluster.
+          Object.keys(groupings).forEach(key => {
+            const group = groupings[key];
+            const targetIds = Array.from(group.targets);
+            if (targetIds.length > clusteringThreshold) {
+              const clusterOptions = {
+                joinCondition: function (nodeOptions) {
+                  // Join nodes whose id is in our targetIds list.
+                  return targetIds.indexOf(nodeOptions.id) !== -1;
+                },
+                processProperties: function (clusterOptions, childNodes, childEdges) {
+                  clusterOptions.label = group.predicate + "\n(" + childNodes.length + " nodes)";
+                  clusterOptions.shape = "circle";
+                  clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+                  clusterOptions.title = "Cluster of nodes with predicate: " + group.predicate + " from subject: " + group.subject;
+                  return clusterOptions;
+                },
+                clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
+              };
+              network.cluster(clusterOptions);
+            }
+          });
+        }
+
+        // Update right-click (context menu) listener to use getNodeAt and call reClusterIncoming.
+        network.on("oncontext", function (params) {
+          // Prevent the default browser context menu.
+          params.event.preventDefault();
+          // Determine the node under the pointer using DOM coordinates.
+          const pointer = params.pointer.DOM;
+          const nodeId = network.getNodeAt(pointer);
+          if (nodeId) {
+            if (network.isCluster(nodeId)) {
+              // Optionally open the cluster if a cluster node is right-clicked.
+              network.openCluster(nodeId);
+            } else {
+              // Re-cluster based on incoming connections for the selected node.
+              reClusterIncoming(nodeId);
+            }
+          }
+        });
+
+
 				network.on("doubleClick", function (params) {
           if (params.nodes.length === 1) {
             const nodeId = params.nodes[0];
@@ -670,53 +760,52 @@
           }
         });
 
-        // Apply clustering
-        applyClusteringByPredicate();
-        applyEdgeFormat();
         updateLegend(graphData.prefixColorMapping)
 			}
       
-      // List of predicates to include in clustering
-      
-      function applyClusteringByPredicate() {
-        const predicateLabels = new Set();
-
+      function applyClusteringBySubjectPredicate() {
+        // Group by subject + predicate
+        let clusters = {};
         networkEdges.get().forEach(edge => {
-          if (edge.label) {
-            // Include only predicates in the includedPredicates array
-            if (excludePredicatestoCluster.some(pred => edge.label.includes(pred))) return;
-            predicateLabels.add(edge.label);
+          if (!edge.baseLabel) return;
+          // Skip predicates that we want to exclude
+          if (excludePredicatestoCluster.some(pred => edge.baseLabel.includes(pred))) return;
+          const key = edge.from + "|" + edge.baseLabel;
+          if (!clusters[key]) {
+            clusters[key] = { subject: edge.from, predicate: edge.baseLabel, objects: new Set() };
+          }
+          clusters[key].objects.add(edge.to);
+        });
+        
+        // For each group, cluster if the number of object nodes exceeds the threshold
+        Object.keys(clusters).forEach(key => {
+          const clusterData = clusters[key];
+          const objectIds = Array.from(clusterData.objects);
+          if (objectIds.length > clusteringThreshold) {
+            const clusterOptions = {
+              joinCondition: function (nodeOptions) {
+                // Include the node if its id is in our objectIds list.
+                return objectIds.indexOf(nodeOptions.id) !== -1;
+              },
+              processProperties: function (clusterOptions, childNodes, childEdges) {
+                clusterOptions.label =
+                  clusterData.predicate + "\n(" + childNodes.length + " nodes)";
+                clusterOptions.shape = "circle";
+                clusterOptions.color = { background: '#FFC107', border: '#FF9800' };
+                clusterOptions.title =
+                  "Cluster of nodes connected from subject " +
+                  clusterData.subject +
+                  " via predicate: " +
+                  clusterData.predicate;
+                return clusterOptions;
+              },
+              clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
+            };
+            network.cluster(clusterOptions);
           }
         });
-
-        predicateLabels.forEach(predicateLabel => {
-          clusterNodesByPredicate(predicateLabel);
-        });
       }
       
-      function clusterNodesByPredicate(predicateLabel) {
-        const clusterOptions = {
-          joinCondition: function(nodeOptions) {
-            const connectedEdges = network.getConnectedEdges(nodeOptions.id);
-            const count = connectedEdges.filter(edgeId => {
-              const edge = network.body.data.edges.get(edgeId);
-              return edge.label === predicateLabel;
-            }).length;
-            // Only include nodes with connections exceeding the threshold
-            return count > clusteringThreshold;
-          },
-          processProperties: function(clusterOptions, childNodes, childEdges) {
-            clusterOptions.label = predicateLabel + "\n(" + childNodes.length + " nodes)";
-            clusterOptions.shape = "circle";
-            clusterOptions.color = { background: '#FFC107', border: '#FF9800' }; // Customize color
-            clusterOptions.title = "Cluster of nodes connected via predicate: " + predicateLabel;
-            return clusterOptions;
-          },
-          clusterNodeProperties: { id: 'cluster:' + predicateLabel, borderWidth: 3, shape: 'circle' }
-        };
-      
-        network.cluster(clusterOptions);
-      }
 			// Toggle node expansion/collapse
 			function toggleNode(nodeId) {
         const node = graphData.network.nodes.find(node => node.id === nodeId);
@@ -1066,15 +1155,7 @@
         renderNetwork();
       });
 
-      function applyEdgeFormat() {
-        const displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
-        if (!displayEdgeLabels) {
-          network.body.data.edges.forEach(edge => {
-            network.body.data.edges.update({ id: edge.id, label: "" });
-          });
-        }
-      }
-			
+      
 			document.getElementById("expandAllButton").addEventListener("click", function () {
         const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
         collapsedNodes.forEach(node => {
