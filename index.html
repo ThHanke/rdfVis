@@ -516,7 +516,7 @@
           fetchWithTimeout(sourceUrl, {}, 10000)
             .then(response => {
               if (!response.ok) {
-                console.log(response)
+                //console.log(response)
                 throw new Error("Network response was not ok: " + response.statusText);
               }
               return response.text();
@@ -576,7 +576,6 @@
           graphData=event.data.graphData;
           renderNetwork();
         } else if (event.data.status === "error") {
-          console.log(event.data)
           showError("Error processing RDF: " + event.data.error);
         }
       };
@@ -626,11 +625,11 @@
       
 			// Render network with options.
 			function renderNetwork() {
-        console.log(graphData)
+        //console.log(graphData)
         var connectedIds = new Set();
         var nodes = {};
         var connections = {};
-        console.log(config)
+        //console.log(config)
         const configBoxContent = document.getElementById("configBoxContent");
         configBoxContent.innerHTML = '';
         config.visNetwork.configure.container=configBoxContent;
@@ -721,8 +720,6 @@
 			// Toggle node expansion/collapse
 			function toggleNode(nodeId) {
         const node = graphData.network.nodes.find(node => node.id === nodeId);
-        console.log(nodeId);
-        console.log(node);
         if (!node) return;
 
         if (node.expanded) {
