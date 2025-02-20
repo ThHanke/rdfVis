@@ -717,10 +717,11 @@
                   return targetIds.indexOf(nodeOptions.id) !== -1;
                 },
                 processProperties: function (clusterOptions, childNodes, childEdges) {
-                  clusterOptions.label = group.predicate + "\n(" + childNodes.length + " nodes)";
+                  clusterOptions.label = nodeData.baseLabel + "\n(and "+ childNodes.length + " others)";
                   clusterOptions.shape = "circle";
                   clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
                   clusterOptions.title = "Cluster of nodes with predicate: " + group.predicate + " from subject: " + group.subject;
+                  clusterOptions.repNode = nodeData;
                   return clusterOptions;
                 },
                 clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
@@ -728,6 +729,7 @@
               network.cluster(clusterOptions);
             }
           });
+          const clusters = network.body.data.nodes.get().filter(n => String(n.id).startsWith("cluster:"));
         }
 
         // Update right-click (context menu) listener to use getNodeAt and call reClusterIncoming.
@@ -788,15 +790,11 @@
                 return objectIds.indexOf(nodeOptions.id) !== -1;
               },
               processProperties: function (clusterOptions, childNodes, childEdges) {
-                clusterOptions.label =
-                  clusterData.predicate + "\n(" + childNodes.length + " nodes)";
+                clusterOptions.label = childNodes[0].baseLabel + "\n(and "+ childNodes.length + " others)";
                 clusterOptions.shape = "circle";
-                clusterOptions.color = { background: '#FFC107', border: '#FF9800' };
-                clusterOptions.title =
-                  "Cluster of nodes connected from subject " +
-                  clusterData.subject +
-                  " via predicate: " +
-                  clusterData.predicate;
+                clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+                clusterOptions.title = "Cluster of nodes with predicate: " + clusterData.predicate + " from subject: " + clusterData.subject;
+                clusterOptions.repNode = childNodes[0];
                 return clusterOptions;
               },
               clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
@@ -821,8 +819,7 @@
           network.body.data.nodes.update({ id: nodeId, label: node.baseLabel + " [-]" });
         }
       }
-
-			function collapseNode(nodeId) {
+      function collapseNode(nodeId) {
         // Fetch all outgoing edges from this node
         var connectedEdges = network.getConnectedEdges(nodeId);
       
