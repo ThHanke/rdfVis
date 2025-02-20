@@ -253,11 +253,9 @@
                   <div id="configBoxHeader" class="card-header">
                     <span>Configuration</span>
                   </div>
-                  <div class="card-body">
-                    <div id="configBoxContent">
+                  <div id="configBoxContent">
                       <!-- vis-network configuration controls will appear here -->
-                    </div>
-                  </div>
+                  </div>  
                   <div class="resize-handle"></div>
                 </div>
                 <!-- Moveable Legend Box -->
@@ -633,6 +631,9 @@
         var nodes = {};
         var connections = {};
         console.log(config)
+        const configBoxContent = document.getElementById("configBoxContent");
+        configBoxContent.innerHTML = '';
+        config.visNetwork.configure.container=configBoxContent;
         graphData.network.edges.forEach(function (edge) {
           connectedIds.add(edge.from);
           connectedIds.add(edge.to);
@@ -1018,9 +1019,6 @@
     
       window.onload = function () {
         config = loadConfigOptions();
-
-        const configBoxContent = document.getElementById("configBoxContent");
-        config.visNetwork.configure.container=configBoxContent;
         config.visNetwork.configure.enabled=true;
         clearError();
         const savedData = localStorage.getItem("rdfData");
