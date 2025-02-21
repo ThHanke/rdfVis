@@ -774,20 +774,22 @@
           if (excludePredicatestoCluster.some(pred => edge.baseLabel.includes(pred))) return;
           const key = edge.from + "|" + edge.baseLabel;
           if (!clusters[key]) {
-            clusters[key] = { subject: edge.from, predicate: edge.baseLabel, objects: new Set() };
+            clusters[key] = { subject: edge.from, predicate: edge.baseLabel, inconn: new Set(), nodesIds: new Set() };
           }
-          clusters[key].objects.add(edge.to);
+          clusters[key].nodesIds.add(edge.to);
         });
         
         // For each group, cluster if the number of object nodes exceeds the threshold
         Object.keys(clusters).forEach(key => {
           const clusterData = clusters[key];
-          const objectIds = Array.from(clusterData.objects);
-          if (objectIds.length > clusteringThreshold) {
+          const nodesIds = Array.from(clusterData.nodesIds);
+          if (nodesIds.length > clusteringThreshold) {
+            //hide all childNodes,except first one
+            //nodesIds.forEach( nodeId => collapseNode(nodeId));
             const clusterOptions = {
               joinCondition: function (nodeOptions) {
                 // Include the node if its id is in our objectIds list.
-                return objectIds.indexOf(nodeOptions.id) !== -1;
+                return nodesIds.indexOf(nodeOptions.id) !== -1;
               },
               processProperties: function (clusterOptions, childNodes, childEdges) {
                 clusterOptions.label = childNodes[0].baseLabel + "\n(and "+ childNodes.length + " others)";
@@ -806,67 +808,82 @@
       
 			// Toggle node expansion/collapse
 			function toggleNode(nodeId) {
-        const node = graphData.network.nodes.find(node => node.id === nodeId);
+        const node = network.body.data.nodes.get(nodeId);
         if (!node) return;
 
         if (node.expanded) {
           collapseNode(nodeId);
-          node.expanded = false;
-          network.body.data.nodes.update({ id: nodeId, label: node.baseLabel + " [+]" });
         } else {
           expandNode(nodeId);
-          node.expanded = true;
-          network.body.data.nodes.update({ id: nodeId, label: node.baseLabel + " [-]" });
         }
       }
+      function collapseEdge(edgeId) {
+        var edge = network.body.data.edges.get(edgeId);
+        if (edge) {
+          var fromNodeId = edge.from;
+          var toNodeId = edge.to;
+  
+          // Hide the edge
+          network.body.data.edges.update({ id: edgeId, hidden: true });
+  
+          // Check if the connected node has other visible incoming edges
+          var incomingEdges = network.getConnectedEdges(toNodeId).filter(function(eid) {
+            var e = network.body.data.edges.get(eid);
+            return e.to === toNodeId && !e.hidden && e.from !== fromNodeId;
+          });
+          // Check if the connected node is expanded before collapsing
+          if (incomingEdges.length === 0) {
+            // Collapse the node
+            // Mark as collapsed
+            network.body.data.nodes.update({
+              id: toNodeId,
+              hidden: true
+             });
+            // Recursively collapse the connected node
+            //collapseNode(toNodeId);
+          }
+        }
+      }
+      
       function collapseNode(nodeId) {
         // Fetch all outgoing edges from this node
-        var connectedEdges = network.getConnectedEdges(nodeId);
-      
-        connectedEdges.forEach(function(edgeId) {
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
           var edge = network.body.data.edges.get(edgeId);
-          if (edge.from === nodeId) {
-            // Hide the edge
-            network.body.data.edges.update({ id: edgeId, hidden: true });
-            // Hide the connected node if it's not connected elsewhere
-            var connectedNodeId = edge.to;
-      
-            // Check if the connected node has other visible incoming edges
-            var incomingEdges = network.getConnectedEdges(connectedNodeId).filter(function(eid) {
-              var e = network.body.data.edges.get(eid);
-              return e.to === connectedNodeId && !e.hidden && e.from !== nodeId;
-            });
-      
-            if (incomingEdges.length === 0) {
-              // Recursively collapse the connected node
-              collapseNode(connectedNodeId);
-              network.body.data.nodes.update({ id: connectedNodeId, hidden: true });
-              // Ensure nodeState exists before updating
-              const connNode = graphData.network.nodes.find(node => node.id === connectedNodeId);
-              if (connNode) {
-                connNode.expanded = false;
-              }
-            }
-          }
+          return edge.from === nodeId; // Only include edges where edge.from == nodeId
         });
+        outgoingEdgeIds.forEach((edgeId) => collapseEdge(edgeId));
+        const node = graphData.network.nodes.find(node => node.id === nodeId);
+        network.body.data.nodes.update({
+          id: nodeId,
+          hidden: false,
+          expanded: false,
+          label: node.baseLabel + " [+]"
+         });
       }
-
-			function expandNode(nodeId) {
+      function expandNode(nodeId) {
         // Fetch all outgoing edges from this node
-        var connectedEdges = network.getConnectedEdges(nodeId);
-      
-        connectedEdges.forEach(function(edgeId) {
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
           var edge = network.body.data.edges.get(edgeId);
-          if (edge.from === nodeId) {
-            // Show the edge
-            network.body.data.edges.update({ id: edgeId, hidden: false });
-            // Show the connected node
-            var connectedNodeId = edge.to;
-            network.body.data.nodes.update({ id: connectedNodeId, hidden: false });
-          }
+          return edge.from === nodeId; // Only include edges where edge.from == nodeId
         });
+        outgoingEdgeIds.forEach(function(edgeId) {
+          var edge = network.body.data.edges.get(edgeId);
+          network.body.data.edges.update({ id: edgeId, hidden: false });
+          // Show the connected node
+          var connectedNodeId = edge.to;
+          network.body.data.nodes.update({
+            id: connectedNodeId,
+            hidden: false
+           });
+        });
+        const node = graphData.network.nodes.find(node => node.id === nodeId);
+        network.body.data.nodes.update({
+          id: nodeId,
+          hidden: false,
+          expanded: true,
+          label: node.baseLabel + " [-]"
+         });
       }
-
 			// Export SVG helper function for element creation.
 			function createSvgElement(tag, attrs) {
 				var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
