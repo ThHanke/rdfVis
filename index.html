@@ -869,7 +869,9 @@
         // Fetch all outgoing edges from this node
         var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
           var edge = network.body.data.edges.get(edgeId);
-          return edge.from === nodeId; // Only include edges where edge.from == nodeId
+          if (edge){
+            return edge.from === nodeId; // Only include edges where edge.from == nodeId
+          }
         });
         outgoingEdgeIds.forEach((edgeId) => collapseEdge(edgeId));
         const node = graphData.network.nodes.find(node => node.id === nodeId);
