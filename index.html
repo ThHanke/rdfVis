@@ -421,6 +421,7 @@
                 },
               improvedLayout: true
             },
+            physics: {enabled: false},
             interaction: { hover: true },
             edges: { smooth: { enabled: true, type: "continuous" } },
             nodes: {
@@ -445,7 +446,7 @@
         };
 
         const layoutType = document.getElementById("layoutType").value;
-				if (config.visNetwork.layout.hierarchical.enabled) {
+				if (finalConfig.visNetwork.layout.hierarchical.enabled) {
           document.getElementById("layoutType").value="hierarchical";
         } else {
           document.getElementById("layoutType").value="force";
@@ -455,6 +456,7 @@
         document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
         document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
         document.getElementById("disableImprovedLayout").checked = finalConfig.disableImprovedLayout;
+        console.log(finalConfig)
         return finalConfig;
       }
 
@@ -632,7 +634,12 @@
         //console.log(config)
         const configBoxContent = document.getElementById("configBoxContent");
         configBoxContent.innerHTML = '';
-        config.visNetwork.configure.container=configBoxContent;
+        config.visNetwork.configure = {
+          enabled: true,
+          filter: ["physics"],
+          showButton: false,
+          container: configBoxContent
+        },
         graphData.network.edges.forEach(function (edge) {
           connectedIds.add(edge.from);
           connectedIds.add(edge.to);
@@ -661,75 +668,13 @@
         
 				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, config.visNetwork);
         // Apply clustering based on subject and predicate grouping
-        applyClusteringBySubjectPredicate();
+        applyClusteringByHubsize();
+        //applyClusteringBySubjectPredicate();
 
         // Helper function: re-cluster based on incoming connections grouped by (from, baseLabel)
         function reClusterIncoming(nodeId) {
           // Verify the node exists; if not, open the cluster and exit.
-          const nodeData = network.body.data.nodes.get(nodeId);
-          if (!nodeData) {
-            if (network.isCluster(nodeId)) {
-              network.openCluster(nodeId);
-            }
-            return;
-          }
-
-          // Get all incoming edges where the clicked node is the target.
-          const incomingEdges = network.getConnectedEdges(nodeId).filter(eid => {
-            const edge = network.body.data.edges.get(eid);
-            return edge && edge.to === nodeId;
-          });
-          if (!incomingEdges.length) return;
-
-          // For each incoming edge, group by its subject and baseLabel.
-          // The key will be: "subject|baseLabel"
-          const groupings = {};
-          incomingEdges.forEach(eid => {
-            const edge = network.body.data.edges.get(eid);
-            if (!edge || !edge.baseLabel) return;
-            // Skip any predicate that should be excluded.
-            if (excludePredicatestoCluster.some(pred => edge.baseLabel.includes(pred))) return;
-            
-            const key = edge.from + "|" + edge.baseLabel;
-            if (!groupings[key]) {
-              groupings[key] = {
-                subject: edge.from,
-                predicate: edge.baseLabel,
-                targets: new Set()
-              };
-              // Look up all edges in the network that match this subject and predicate.
-              networkEdges.get().forEach(e => {
-                if (e.from === edge.from && e.baseLabel === edge.baseLabel) {
-                  groupings[key].targets.add(e.to);
-                }
-              });
-            }
-          });
-
-          // For each grouping, if the number of target nodes exceeds the threshold, create a cluster.
-          Object.keys(groupings).forEach(key => {
-            const group = groupings[key];
-            const targetIds = Array.from(group.targets);
-            if (targetIds.length > clusteringThreshold) {
-              const clusterOptions = {
-                joinCondition: function (nodeOptions) {
-                  // Join nodes whose id is in our targetIds list.
-                  return targetIds.indexOf(nodeOptions.id) !== -1;
-                },
-                processProperties: function (clusterOptions, childNodes, childEdges) {
-                  clusterOptions.label = nodeData.baseLabel + "\n(and "+ childNodes.length + " others)";
-                  clusterOptions.shape = "circle";
-                  clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
-                  clusterOptions.title = "Cluster of nodes with predicate: " + group.predicate + " from subject: " + group.subject;
-                  clusterOptions.repNode = nodeData;
-                  return clusterOptions;
-                },
-                clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
-              };
-              network.cluster(clusterOptions);
-            }
-          });
-          const clusters = network.body.data.nodes.get().filter(n => String(n.id).startsWith("cluster:"));
+          clusterSpecificNodeByHubsize(nodeId,hubsize=3);
         }
 
         // Update right-click (context menu) listener to use getNodeAt and call reClusterIncoming.
@@ -764,6 +709,81 @@
 
         updateLegend(graphData.prefixColorMapping)
 			}
+      
+      function applyClusteringByHubsize() {
+        var clusterOptionsByData = {
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+            clusterOptions.label = childNodes[0].baseLabel + "\n(and "+ childNodes.length + " others)";
+            clusterOptions.shape = "circle";
+            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
+            clusterOptions.repNode = childNodes[0];
+            return clusterOptions;
+          },
+          clusterNodeProperties: {
+            borderWidth: 3,
+            shape: "circle",
+            //font: { size: 30 },
+          },
+        };
+        network.clusterByHubsize(undefined, clusterOptionsByData);
+      }
+      function clusterSpecificNodeByHubsize(nodeId, hubsize) {
+        // Retrieve the node data
+        const nodeData = network.body.data.nodes.get(nodeId);
+        if (!nodeData) {
+          console.error(`Node with id ${nodeId} not found.`);
+          return;
+        }
+      
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
+          var edge = network.body.data.edges.get(edgeId);
+          if (edge){
+            return edge.from === nodeId; // Only include edges where edge.from == nodeId
+          }
+        });
+
+        // If no outgoing edges exist, do not perform clustering
+        if (outgoingEdgeIds.length === 0) {
+          console.log(`Node ${nodeId} has no outgoing connections to form a cluster.`);
+          return;
+        }
+        var outgoingNodeIds = outgoingEdgeIds.map(function(edgeId) {
+          var edge = network.body.data.edges.get(edgeId);
+          return edge.to; // Get the 'to' property of the edge
+        });
+        
+        // Check if the number of connected nodes meets the hubsize requirement
+        if (outgoingNodeIds.length < hubsize) {
+          console.log(
+            `Node ${nodeId} does not have enough connections to form a cluster (required: ${hubsize}, found: ${outgoingNodeIds.length}).`
+          );
+          return;
+        }
+      
+        // Define a join condition that includes the specific node and its connected nodes
+        const joinCondition = (nodeOptions) => {
+          return nodeOptions.id === nodeId || outgoingNodeIds.includes(nodeOptions.id);
+        };
+      
+        // Cluster the nodes using the join condition; customize the cluster node properties as needed
+        network.cluster({
+          joinCondition: joinCondition,
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+            clusterOptions.label = nodeData.baseLabel + "\n(and "+ childNodes.length + " others)";
+            clusterOptions.shape = "circle";
+            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
+            clusterOptions.repNode = nodeData;
+            return clusterOptions;
+          },
+          clusterNodeProperties: {
+            borderWidth: 3,
+            shape: "circle",
+            //font: { size: 30 },
+          },
+        });
+      }
       
       function applyClusteringBySubjectPredicate() {
         // Group by subject + predicate
@@ -883,6 +903,15 @@
           expanded: true,
           label: node.baseLabel + " [-]"
          });
+      }
+      function openAllClusters(network) {
+        let clusters = Object.keys(network.body.nodes).filter(nodeId => {
+            return network.isCluster(nodeId);
+        });
+    
+        clusters.forEach(clusterId => {
+            network.openCluster(clusterId);
+        });
       }
 			// Export SVG helper function for element creation.
 			function createSvgElement(tag, attrs) {
@@ -1127,6 +1156,14 @@
         }
       };
       
+      document.getElementById("configBox").addEventListener("change", function() {
+        const visoptions = {
+          ...config.visNetwork,
+          ...network.getOptionsFromConfigurator()
+        };
+        config.visNetwork=visoptions
+        saveConfigOptions();
+      });
 
       document.getElementById("layoutType").addEventListener("change", function() {
         const layoutType = document.getElementById("layoutType").value;
@@ -1171,6 +1208,7 @@
 
       
 			document.getElementById("expandAllButton").addEventListener("click", function () {
+        openAllClusters(network);
         const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
         collapsedNodes.forEach(node => {
           expandNode(node.id);
