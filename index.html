@@ -421,7 +421,17 @@
                 },
               improvedLayout: true
             },
-            physics: {enabled: false},
+            physics: {
+              enabled: false,
+              solver: "repulsion", 
+              repulsion: {
+                centralGravity: 0.2,
+                springLength: 200,
+                springConstant: 0.05,
+                nodeDistance: 100,
+                damping: 0.09
+              },
+            },
             interaction: { hover: true },
             edges: { smooth: { enabled: true, type: "continuous" } },
             nodes: {
