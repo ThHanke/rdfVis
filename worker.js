@@ -214,6 +214,7 @@ function buildGraphFromStore(store, prefixMapping) {
       objNodeId = subjId + '-' + pred + '-literal-' + edgeIdCounter;
       nodesMap[objNodeId] = {
         id: objNodeId,
+        type: "Literal",
         label: st.object.value,
         shape: 'box',
         baseLabel: st.object.value
