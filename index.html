@@ -387,7 +387,9 @@
 			var currentNodeRadius = 15;
 			var currentFontSize = 10;
 
-      function saveConfigOptions() {
+      function saveConfigOptions(config) {
+        //console.log("savingConfig")
+        //console.log(config.visNetwork.physics)
         localStorage.setItem("visNetworkConfig", JSON.stringify(config));
       }
       
@@ -402,11 +404,6 @@
           displayEdgeLabels: true,
           disableImprovedLayout: false,
           visNetwork: {
-            configure: {
-              enabled: false,
-              filter: ["physics"],
-              showButton: false,
-            },
             layout: { hierarchical: {
               enabled: true,
               levelSeparation: 150,
@@ -420,17 +417,6 @@
               shakeTowards: 'leaves'  // roots, leaves
                 },
               improvedLayout: true
-            },
-            physics: {
-              enabled: false,
-              solver: "repulsion", 
-              repulsion: {
-                centralGravity: 0.2,
-                springLength: 200,
-                springConstant: 0.05,
-                nodeDistance: 100,
-                damping: 0.09
-              },
             },
             interaction: { hover: true },
             edges: { smooth: { enabled: true, type: "continuous" } },
@@ -466,7 +452,8 @@
         document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
         document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
         document.getElementById("disableImprovedLayout").checked = finalConfig.disableImprovedLayout;
-        console.log(finalConfig)
+        saveConfigOptions(finalConfig)
+
         return finalConfig;
       }
 
@@ -633,23 +620,32 @@
                 legendContainer.appendChild(rowItem);
             }
         }
-      }    
-      
+      }
+
+      function initializeNetwork() {
+        const configBoxContent = document.getElementById("configBoxContent");
+        configBoxContent.innerHTML = '';
+        confoptions= {
+          configure: {
+            enabled: true,
+            filter: ["physics"],
+            showButton: false,
+            container: configBoxContent
+          },
+        },
+        network = new vis.Network(document.getElementById("graphContainer"), { nodes: new vis.DataSet({}), edges: new vis.DataSet({}) }, confoptions);
+        //options = {
+          //...config.visNetwork,
+          //...confoptions
+        //};
+        //network.setOptions(config.visNetwork);
+      }
 			// Render network with options.
 			function renderNetwork() {
-        //console.log(graphData)
+        //console.log("renderNetwork")
         var connectedIds = new Set();
         var nodes = {};
         var connections = {};
-        //console.log(config)
-        const configBoxContent = document.getElementById("configBoxContent");
-        configBoxContent.innerHTML = '';
-        config.visNetwork.configure = {
-          enabled: true,
-          filter: ["physics"],
-          showButton: false,
-          container: configBoxContent
-        },
         graphData.network.edges.forEach(function (edge) {
           connectedIds.add(edge.from);
           connectedIds.add(edge.to);
@@ -674,9 +670,7 @@
           });
         }
         
-				if (network) network.destroy();
-        
-				network = new vis.Network(document.getElementById("graphContainer"), { nodes: networkNodes, edges: networkEdges }, config.visNetwork);
+				network.setData({ nodes: networkNodes, edges: networkEdges });
         // Apply clustering based on subject and predicate grouping
         applyClusteringByHubsize();
         //applyClusteringBySubjectPredicate();
@@ -716,7 +710,6 @@
             }
           }
         });
-
         updateLegend(graphData.prefixColorMapping)
 			}
       
@@ -1159,22 +1152,35 @@
       });
     
       window.onload = function () {
-        config = loadConfigOptions();
-        config.visNetwork.configure.enabled=true;
+        initializeNetwork();
         clearError();
+        config=loadConfigOptions()
+        network.setOptions(config.visNetwork);
+        saveConfigOptions(config);
         const savedData = localStorage.getItem("rdfData");
         if (savedData) {
           processRDFData(savedData, "http://example.org/", "text/turtle");
         }
       };
       
-      document.getElementById("configBox").addEventListener("change", function() {
+      const configBoxContent = document.getElementById("configBoxContent");
+      function updateOptions() {
         const visoptions = {
           ...config.visNetwork,
           ...network.getOptionsFromConfigurator()
         };
-        config.visNetwork=visoptions
-        saveConfigOptions();
+        config.visNetwork = visoptions;
+        saveConfigOptions(config);
+      }
+      
+      // Listen for change events (covers select changes and some range updates)
+      configBoxContent.addEventListener("change", updateOptions);
+      
+      // Listen for mouseup events specifically on range inputs
+      configBoxContent.addEventListener("mouseup", function(e) {
+        if (e.target && e.target.matches('input[type="range"]')) {
+          updateOptions();
+        }
       });
 
       document.getElementById("layoutType").addEventListener("change", function() {
@@ -1186,7 +1192,7 @@
         }
         config.layoutType=layoutType;
         //network.setOptions({ configBox });
-        saveConfigOptions();
+        saveConfigOptions(config);
         renderNetwork();
       });
     
@@ -1195,26 +1201,26 @@
 				var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
         config.connectionStyle=connectionStyle;
         config.visNetwork.edges={ smooth: smoothOption};
-        saveConfigOptions();
+        saveConfigOptions(config);
         renderNetwork();
       });
     
       document.getElementById("hideIsolatedNodes").addEventListener("change", function() {
         config.hideIsolatedNodes = document.getElementById("hideIsolatedNodes").checked;
-        saveConfigOptions();
+        saveConfigOptions(config);
         renderNetwork();
       });
     
       document.getElementById("displayEdgeLabels").addEventListener("change", function() {
         config.displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
-        saveConfigOptions();
+        saveConfigOptions(config);
         renderNetwork();
       });
     
       document.getElementById("disableImprovedLayout").addEventListener("change", function() {
         config.disableImprovedLayout = document.getElementById("disableImprovedLayout").checked
         config.visNetwork.layout.improvedLayout=!document.getElementById("disableImprovedLayout").checked;
-        saveConfigOptions();
+        saveConfigOptions(config);
         renderNetwork();
       });
 
