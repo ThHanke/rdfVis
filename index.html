@@ -14,6 +14,9 @@
     <!-- Then include d3-scale-chromatic -->
     <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
     <style>
+      body {
+        padding-top: 56px; /* Adjust based on your navbar height */
+      }
       #content {
         height: calc(100vh - 56px); /* Adjust height based on navbar height */
       }
@@ -23,6 +26,7 @@
       }
       #sidebar {
           transition: margin 0.3s;
+          min-height: 0;
       }
       .sidebar.hidden {
         transform: translateX(-250px);
@@ -164,7 +168,7 @@
   </head>
   <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
       <div class="container-fluid">
         <!-- In your navbar, update the toggle button like this -->
         <button id="toggleSidebar" class="btn btn-sm me-2 d-none d-md-inline-block">☰</button>
@@ -178,90 +182,90 @@
     <div class="container-fluid" id="content">
         <div class="row p-0" id="contentrow">
             <!-- Sidebar -->
-            <div class="sidebar col-12 col-md-3 col-xl-2 px-3 bg-light d-flex flex-column" id="sidebar">
-              <h5>RDF Graph Visualizer</h5>
+            <div class="sidebar col-12 col-md-3 col-xl-2 px-3 bg-light d-flex flex-column h-100" id="sidebar">
               <hr />
-              <!-- Input Source -->
-              <div class="mb-3">
-                <label class="form-label">Input Source</label>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
-                  <label class="form-check-label" for="fileInputRadio">Load from File</label>
+              <div class="flex-grow-1 overflow-auto">
+                <!-- Input Source -->
+                <div class="mb-3">
+                  <label class="form-label">Input Source</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
+                    <label class="form-check-label" for="fileInputRadio">Load from File</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
+                    <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
+                  </div>
                 </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
-                  <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
+                <!-- File Input Section -->
+                <div id="fileSection" class="mb-3">
+                  <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
+                  <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
+                  
+                  <div class="mt-3">
+                    <label class="form-label">Or enter file URL:</label>
+                    <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" value="https://raw.githubusercontent.com/Mat-O-Lab/IOFMaterialsTutorial/refs/heads/main/sieving_ASTM_B214-07.ttl" class="form-control" />
+                    <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
+                  </div>
+                </div>                
+                <!-- SPARQL Input Section -->
+                <div id="sparqlSection" class="mb-3" style="display: none;">
+                  <div class="mb-2">
+                    <label for="endpointUrl" class="form-label">Endpoint URL:</label>
+                    <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
+                  </div>
+                  <div class="mb-2">
+                    <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
+                    <textarea id="sparqlQuery" class="form-control" rows="3">
+          CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
+                    </textarea>
+                  </div>
+                  <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
+                </div>
+                <hr />
+                <!-- Layout & Display Options -->
+                <div class="mb-3">
+                  <h6>Layout Options</h6>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
+                    <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
+                  </div>
+                  <div class="mb-2">
+                    <label for="layoutType" class="form-label">Layout Type:</label>
+                    <select id="layoutType" class="form-select form-select-sm">
+                      <option value="force">Force Directed</option>
+                      <option value="hierarchical" selected>Hierarchical</option>
+                    </select>
+                  </div>
+                  <div class="mb-2">
+                    <label for="connectionStyle" class="form-label">Connection Style:</label>
+                    <select id="connectionStyle" class="form-select form-select-sm">
+                      <option value="curved" selected>Curved</option>
+                      <option value="straight">Straight</option>
+                    </select>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
+                    <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
+                    <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
+                  </div>
+                  <div class="d-flex flex-wrap gap-1 mt-2">
+                    <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
+                    <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
+                    <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
+                    <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
+                  </div>
                 </div>
               </div>
-              <!-- File Input Section -->
-              <div id="fileSection" class="mb-3">
-                <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
-                <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
-                
-                <div class="mt-3">
-                  <label class="form-label">Or enter file URL:</label>
-                  <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" value="https://raw.githubusercontent.com/Mat-O-Lab/IOFMaterialsTutorial/refs/heads/main/sieving_ASTM_B214-07.ttl" class="form-control" />
-                  <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
-                </div>
-              </div>                
-              <!-- SPARQL Input Section -->
-              <div id="sparqlSection" class="mb-3" style="display: none;">
-                <div class="mb-2">
-                  <label for="endpointUrl" class="form-label">Endpoint URL:</label>
-                  <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
-                </div>
-                <div class="mb-2">
-                  <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
-                  <textarea id="sparqlQuery" class="form-control" rows="3">
-        CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
-                  </textarea>
-                </div>
-                <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
-              </div>
-              <hr />
-              <!-- Layout & Display Options -->
-              <div class="mb-3">
-                <h6>Layout Options</h6>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
-                  <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
-                </div>
-                <div class="mb-2">
-                  <label for="layoutType" class="form-label">Layout Type:</label>
-                  <select id="layoutType" class="form-select form-select-sm">
-                    <option value="force">Force Directed</option>
-                    <option value="hierarchical" selected>Hierarchical</option>
-                  </select>
-                </div>
-                <div class="mb-2">
-                  <label for="connectionStyle" class="form-label">Connection Style:</label>
-                  <select id="connectionStyle" class="form-select form-select-sm">
-                    <option value="curved" selected>Curved</option>
-                    <option value="straight">Straight</option>
-                  </select>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
-                  <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
-                  <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
-                </div>
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                  <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
-                  <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
-                  <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
-                  <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
-                </div>
-              </div>
-              <hr />
-              <footer class="mt-auto">
-                <small>
+              <div class="p-2 border-top">
+                <small class="m-0">
                   Source code available at
                   <a href="https://github.com/ThHanke/rdfVis" target="_blank">GitHub</a>
                 </small>
-              </footer>
+              </div>
             </div>
 
             <!-- Main Content -->
