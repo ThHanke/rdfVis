@@ -26,12 +26,34 @@
       }
       .sidebar.hidden {
         transform: translateX(-250px);
-        margin-left: -250px; /* Adjust this value based on your sidebar width */
+        margin-left: calc(-34vw); /* Adjust this value based on your sidebar width */
       }
       
-      .container-fluid.expanded {
-        margin-left: 0;
+            /* When the row has .sidebar-collapsed, make the main content expand to full width */
+      .sidebar-collapsed > main {
+        flex: 0 0 100%;
+        max-width: 100%;
       }
+      
+      .scroll-top-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 1002;
+        padding: 10px 15px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.3s;
+      }
+      .scroll-top-btn:hover {
+        opacity: 1;
+      }
+      
       
       .card {
         position: absolute;
@@ -125,6 +147,7 @@
       #mainContent {
         position: relative;
       }
+
       /* Adjust graph container to account for floating boxes */
       #graphContainer {
         height: calc(100vh - 56px);
@@ -143,7 +166,8 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container-fluid">
-        <button id="toggleSidebar" class="btn btn-sm me-2">☰</button>
+        <!-- In your navbar, update the toggle button like this -->
+        <button id="toggleSidebar" class="btn btn-sm me-2 d-none d-md-inline-block">☰</button>
         <a class="navbar-brand" href="#">Interactive RDF Graph Visualizer</a>
         <div class="ms-auto">
           <button id="toggleLegend" class="btn btn-secondary btn-sm ms-2">Legend</button>
@@ -152,9 +176,9 @@
       </div>
     </nav>
     <div class="container-fluid" id="content">
-        <div class="row" id="contentrow">
+        <div class="row p-0" id="contentrow">
             <!-- Sidebar -->
-            <div class="sidebar col-12 col-md-3 col-xl-2 px-0 bg-light d-flex flex-column" id="sidebar">
+            <div class="sidebar col-12 col-md-3 col-xl-2 px-3 bg-light d-flex flex-column" id="sidebar">
               <h5>RDF Graph Visualizer</h5>
               <hr />
               <!-- Input Source -->
@@ -268,6 +292,9 @@
             </main>
         </div>
     </div>
+    <!-- Floating scroll-to-top button, placed near the end of your body -->
+    <button id="scrollTopBtn" class="scroll-top-btn d-md-none">↑ Top</button>
+
 		<!-- Bootstrap Bundle with Popper -->
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 		<!-- vis-network -->
@@ -279,13 +306,22 @@
       // Sidebar Toggle Functionality
     const toggleBtn = document.getElementById("toggleSidebar");
     const sidebar = document.getElementById("sidebar");
-    const mainContent = document.getElementById("mainContent");
+    const contentRow = document.getElementById("contentrow");
 
     toggleBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("hidden");
-      mainContent.classList.toggle("expanded");
+      // Toggle sidebar visibility using Bootstrap's d-none
+      sidebar.classList.toggle("d-none");
+      // Toggle a custom class on the row
+      contentRow.classList.toggle("sidebar-collapsed");
     });
 
+    document.getElementById("scrollTopBtn").addEventListener("click", () => {
+      console.log('scroll up')
+      const contentRow = document.getElementById("contentrow");
+      contentRow.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    
+    
     // Toggle Config Box from Navbar button
     document.getElementById("toggleConfigBox").addEventListener("click", () => {
       const configBox = document.getElementById("configBox");
@@ -368,7 +404,7 @@
           }
         }
       }
-    });    
+    });
     </script>
 		<script>
 			// Global variables
@@ -640,41 +676,50 @@
         //};
         //network.setOptions(config.visNetwork);
       }
-			// Render network with options.
-			function renderNetwork() {
-        //console.log("renderNetwork")
-        var connectedIds = new Set();
-        var nodes = {};
-        var connections = {};
-        graphData.network.edges.forEach(function (edge) {
-          connectedIds.add(edge.from);
-          connectedIds.add(edge.to);
-        });
-        if (config.hideIsolatedNodes) {  
+      function showedgelabels(hidden=false){
+        if (hidden) {
+          network.body.data.edges.forEach(function (edge) {
+            edge.label = "";
+          });
+        } else {
+          network.body.data.edges.forEach(function (edge) {
+            edge.label = edge.baseLabel;
+          });
+        }
+      }
+      function getNetworkNodes(hideIsolated=false){
+        if (hideIsolated) {
+          var connectedIds = new Set();
+          graphData.network.edges.forEach(function (edge) {
+            connectedIds.add(edge.from);
+            connectedIds.add(edge.to);
+          });
           networkNodes = new vis.DataSet(graphData.network.nodes.filter(function (n) { return connectedIds.has(n.id); }));
         } else {
           networkNodes = new vis.DataSet(graphData.network.nodes);
         }
-				networkEdges = new vis.DataSet(graphData.network.edges);
-				networkNodes.forEach(function (node) {
+        networkNodes.forEach(function (node) {
 					node.size = currentNodeRadius;
 					networkNodes.update(node);
 				});
-        if (!config.displayEdgeLabels) {
-          networkEdges.forEach(function (edge) {
-            edge.label = "";
-          });
-        } else {
-          networkEdges.forEach(function (edge) {
-            edge.label = edge.baseLabel;
-          });
-        }
+        return networkNodes
+      }
+			// Render network with options.
+			function renderNetwork(cluster=true) {
+        //console.log("renderNetwork")
+        var nodes = {};
+        var connections = {};
+        
+        networkNodes= getNetworkNodes(config.hideIsolatedNodes)
+				networkEdges = new vis.DataSet(graphData.network.edges);
+        showedgelabels(!config.displayEdgeLabels)
         
 				network.setData({ nodes: networkNodes, edges: networkEdges });
-        // Apply clustering based on subject and predicate grouping
-        applyClusteringByHubsize();
-        //applyClusteringBySubjectPredicate();
-
+        if (cluster) {
+          // Apply clustering based on subject and predicate grouping
+          applyClusteringByHubsize();
+          //applyClusteringBySubjectPredicate();
+        }
         // Helper function: re-cluster based on incoming connections grouped by (from, baseLabel)
         function reClusterIncoming(nodeId) {
           // Verify the node exists; if not, open the cluster and exit.
@@ -1191,9 +1236,9 @@
           config.visNetwork.layout.hierarchical.enabled=false;
         }
         config.layoutType=layoutType;
-        //network.setOptions({ configBox });
+        network.setOptions(config.visNetwork);
         saveConfigOptions(config);
-        renderNetwork();
+        //renderNetwork();
       });
     
       document.getElementById("connectionStyle").addEventListener("change", function() {
