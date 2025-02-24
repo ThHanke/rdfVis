@@ -160,11 +160,13 @@ function buildGraphFromStore(store, prefixMapping) {
     const pred = st.predicate.value;
     const objId = st.object.termType === 'Literal' ? null : getNodeId(st.object);
     // Handle rdfs:label
-    if (pred === 'http://www.w3.org/2000/01/rdf-schema#label') {
+    if (pred.endsWith('rdf-schema#label')) {
       const label=NodeTitle(shortenLabel(subjId,prefixMapping), st.object.value);
       if (!nodesMap[subjId]) {
         nodesMap[subjId] = {
           id: subjId,
+          iri: subjId,
+          rdfsLabel: st.object.value,
           label: label + ' [-]',
           shape: 'box',
           expanded: true,
@@ -172,6 +174,7 @@ function buildGraphFromStore(store, prefixMapping) {
         };
       } else {
         nodesMap[subjId].label = label + ' [-]';
+        nodesMap[subjId].rdfsLabel= st.object.value;
       }
       return;
     }
@@ -181,6 +184,7 @@ function buildGraphFromStore(store, prefixMapping) {
         const label=NodeTitle(shortenLabel(subjId,prefixMapping));
         nodesMap[subjId] = {
           id: subjId,
+          iri: subjId,
           label: label + ' [-]',
           shape: 'box',
           type: shortenURI(st.object.value,prefixMapping),
@@ -197,6 +201,7 @@ function buildGraphFromStore(store, prefixMapping) {
       const label=NodeTitle(shortenLabel(subjId,prefixMapping));
       nodesMap[subjId] = {
         id: subjId,
+        iri: subjId,
         label: label + ' [-]',
         shape: 'box',
         expanded: true,
@@ -219,6 +224,7 @@ function buildGraphFromStore(store, prefixMapping) {
         const label=NodeTitle(shortenLabel(objNodeId,prefixMapping));
         nodesMap[objNodeId] = {
           id: objNodeId,
+          iri: objNodeId,
           label: label + ' [-]',
           shape: 'box',
           expanded: true,
@@ -264,7 +270,7 @@ function assignColorsToNodes(nodes,prefixMapping) {
       node.color = { background: "#CCCCCC", border: "#000" };
     }
     // Construct a simple tooltip (title) by including properties except for some keys.
-    var excludeKeys = ['shape', 'color', 'label', 'font'];
+    var excludeKeys = ['shape', 'color', 'label', 'font', "id", "baseLabel", "rdfsLabel"];
     var tooltipContent = "";
     for (var key in node) {
       if (excludeKeys.indexOf(key) < 0) {
