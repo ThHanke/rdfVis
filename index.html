@@ -716,9 +716,11 @@
 				});
         if (simpleNodeLabels) {
           networkNodes.forEach(function (node) {
-            node.label = node.rdfsLabel + '[-]';
-            node.baseLabel = node.rdfsLabel + '[-]';
-            networkNodes.update(node);
+            if (node.type !== 'Literal') {
+              node.label = node.rdfsLabel + '[-]';
+              node.baseLabel = node.rdfsLabel + '[-]';
+              networkNodes.update(node);
+            }
           });
         }
         return networkNodes
