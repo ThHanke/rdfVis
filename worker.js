@@ -81,71 +81,71 @@ function getNodeId(node) {
 
 // Extracts prefixes from the RDF store
 function extractPrefixesFromStore(store) {
-    let namespaces = {};
-    store.namespaces && Object.entries(store.namespaces).forEach(([prefix, uri]) => {
-      namespaces[prefix] = uri;
-    });
-  
-    return { ...knownPrefixes, ...namespaces };
-  }
+  let namespaces = {};
+  store.namespaces && Object.entries(store.namespaces).forEach(([prefix, uri]) => {
+    namespaces[prefix] = uri;
+  });
+
+  return { ...knownPrefixes, ...namespaces };
+}
   
 // Shorten URI – if base defined, use "base:".
 function shortenURI(uri, prefixMapping) {
-    if (prefixMapping["base"] && uri.indexOf(prefixMapping["base"]) === 0) {
-      return "base:" + uri.substring(prefixMapping["base"].length);
-    }
-    // Filter out any undefined or non-string values.
-    var entries = Object.entries(prefixMapping)
-      .filter(function ([p, ns]) {
-        return ns && typeof ns === "string";
-      })
-      .map(function ([p, ns]) {
-        return { prefix: (p === "" ? "base" : p), ns: ns };
-      });
-    entries.sort(function (a, b) {
-      return b.ns.length - a.ns.length;
+  if (prefixMapping["base"] && uri.indexOf(prefixMapping["base"]) === 0) {
+    return "base:" + uri.substring(prefixMapping["base"].length);
+  }
+  // Filter out any undefined or non-string values.
+  var entries = Object.entries(prefixMapping)
+    .filter(function ([p, ns]) {
+      return ns && typeof ns === "string";
+    })
+    .map(function ([p, ns]) {
+      return { prefix: (p === "" ? "base" : p), ns: ns };
     });
-    for (var i = 0; i < entries.length; i++) {
-      var prefix = entries[i].prefix;
-      var ns = entries[i].ns;
-      if (uri.indexOf(ns) === 0) {
-        return prefix + ":" + uri.substring(ns.length);
-      }
+  entries.sort(function (a, b) {
+    return b.ns.length - a.ns.length;
+  });
+  for (var i = 0; i < entries.length; i++) {
+    var prefix = entries[i].prefix;
+    var ns = entries[i].ns;
+    if (uri.indexOf(ns) === 0) {
+      return prefix + ":" + uri.substring(ns.length);
     }
-    var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
-    if (idx === -1) return uri;
-    var ns = uri.substring(0, idx + 1);
-    var local = uri.substring(idx + 1);
-    for (var key in prefixMapping) {
-      if (prefixMapping[key] === ns) {
-        var pfx = (key === "" ? "base" : key);
-        return pfx + ":" + local;
-      }
-    }
-    var newPrefix = "ns" + generatedPrefixCounter++;
-    prefixMapping[newPrefix] = ns;
-    return newPrefix + ":" + local;
   }
+  var idx = Math.max(uri.lastIndexOf("/"), uri.lastIndexOf("#"));
+  if (idx === -1) return uri;
+  var ns = uri.substring(0, idx + 1);
+  var local = uri.substring(idx + 1);
+  for (var key in prefixMapping) {
+    if (prefixMapping[key] === ns) {
+      var pfx = (key === "" ? "base" : key);
+      return pfx + ":" + local;
+    }
+  }
+  var newPrefix = "ns" + generatedPrefixCounter++;
+  prefixMapping[newPrefix] = ns;
+  return newPrefix + ":" + local;
+}
         
-  function shortenLabel(label,prefixMapping) {
-    if (typeof label !== 'string') {
-      if (label && typeof label.value === 'string') {
-        label = label.value;
-      } else {
-        console.error('Label is not a string:', label);
-        return '[Invalid label]';
-      }
+function shortenLabel(label,prefixMapping) {
+  if (typeof label !== 'string') {
+    if (label && typeof label.value === 'string') {
+      label = label.value;
+    } else {
+      console.error('Label is not a string:', label);
+      return '[Invalid label]';
     }
-    if (label.startsWith("http://") || label.startsWith("https://")) {
-      const shortened = shortenURI(label,prefixMapping);
-      // Check if the shortened version ends with a colon
-      if (shortened.endsWith(':')) {
-        return label; // Return the original label
-      }
-      return shortened; // Return the shortened version
-    }
-    return label;
   }
+  if (label.startsWith("http://") || label.startsWith("https://")) {
+    const shortened = shortenURI(label,prefixMapping);
+    // Check if the shortened version ends with a colon
+    if (shortened.endsWith(':')) {
+      return label; // Return the original label
+    }
+    return shortened; // Return the shortened version
+  }
+  return label;
+}
 
 
 function buildGraphFromStore(store, prefixMapping) {
@@ -208,6 +208,7 @@ function buildGraphFromStore(store, prefixMapping) {
         nodesMap[objNodeId] = {
           id: objNodeId,
           iri: objNodeId,
+          rdfsLabel: "",
           shortIRI: shortenLabel(objNodeId,prefixMapping)
         };
       }

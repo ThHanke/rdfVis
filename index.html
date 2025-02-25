@@ -463,7 +463,7 @@
             const expandedId = expandId(rawNodeId);
             nodeData.id = expandedId;
             nodeData.iri = expandedId;
-            nodeData.shortIRI = rawNodeId;
+            nodeData.shortIRI = shortenIri(expandedId);
             nodeData.type = nodeType;
             // Set the baseLabel from the input.
             nodeData.rdfsLabel = nodeLabelInput;
@@ -504,7 +504,6 @@
           { once: true }
         );
       }
-      
       function addEdgeModal(edgeData, callback) {
         if (edgeData.from && edgeData.to) {
           showEdgeModal(edgeData);
@@ -533,6 +532,7 @@
               // Set tooltip for the edge.
               edgeData.title = "IRI: "+expandId(edgeLabelInput);
               edgeSubmitted = true;
+              edgeData.arrows= { to: { enabled: true, type: 'arrow' } };
               edgeModal.hide();
               callback(edgeData);
             },
@@ -719,7 +719,6 @@
           const parts = rawId.split(":");
           const prefix = parts[0];
           const local = parts.slice(1).join(":");
-          console.log(graphData.prefixColorMapping)
           if (graphData.prefixColorMapping[prefix]) {
             return graphData.prefixColorMapping[prefix].uri + local;
           } else {
@@ -728,6 +727,16 @@
         } else {
           return graphData.prefixColorMapping['base'].uri + rawId;
         }
+      }
+      function shortenIri(fullIri) {
+        for (const prefix in graphData.prefixColorMapping) {
+            const uri = graphData.prefixColorMapping[prefix].uri;
+            if (fullIri.startsWith(uri)) {
+                const localPart = fullIri.substring(uri.length);
+                return `${prefix}:${localPart}`;
+            }
+        }
+        return fullIri; // Return the original if no prefix matches
       }
       function NodeLabel(node,simpleNodeLabels){
         if (node.type === 'Literal') {
