@@ -33,7 +33,7 @@
         margin-left: calc(-34vw); /* Adjust this value based on your sidebar width */
       }
       
-            /* When the row has .sidebar-collapsed, make the main content expand to full width */
+      /* When the row has .sidebar-collapsed, make the main content expand to full width */
       .sidebar-collapsed > main {
         flex: 0 0 100%;
         max-width: 100%;
@@ -58,7 +58,6 @@
         opacity: 1;
       }
       
-      
       .card {
         position: absolute;
         cursor: move;
@@ -75,7 +74,6 @@
       .card-header {
         cursor: move;
       }
-
       #configBox {
         position: absolute;
         top: 0;
@@ -91,14 +89,12 @@
         flex-direction: column;
         display: none; /* Hidden by default */
       }
-      
       #configBoxContent {
         flex-grow: 1; /* Ensures it fills the space */
         overflow-y: auto; /* Makes it scrollable when needed */
         padding: 10px;
         max-height: calc(100% - 40px); /* Adjust based on header/footer */
       }
-      
       #legend {
         position: absolute;
         bottom: 0;
@@ -113,52 +109,41 @@
         display: flex;
         flex-direction: column;
       }
-      
       #legendList {
         flex-grow: 1;
         overflow-y: auto; /* Scrollable if needed */
         padding: 10px;
       }
-      
-      
       #legend .row {
           overflow: hidden; /* Prevent horizontal scrolling */
       }
-      
       .legend-text {
           white-space: nowrap; /* Prevent text from wrapping */
           overflow: hidden; /* Hide overflow */
           text-overflow: ellipsis; /* Add ellipsis for long text */
       }
-      
       #legend .legend-color {
         width: 15px;
         height: 15px;
         margin-right: 10px; /* Space between color box and prefix */
       }
-      
       #legend .legend-prefix {
           flex: 1; /* Allow the prefix to take remaining space */
           white-space: nowrap; /* Prevent text from wrapping */
       }
-        
       #configBox.hidden {
         height: 40px;
         overflow: hidden;
       }
-  
-      
       #mainContent {
         position: relative;
       }
-
       /* Adjust graph container to account for floating boxes */
       #graphContainer {
         height: calc(100vh - 56px);
         width: 100%;
         position: relative;
       }
-      
       @media (max-width: 767.98px) {
         #mainContent {
           margin-top: 1rem;
@@ -180,127 +165,126 @@
       </div>
     </nav>
     <div class="container-fluid" id="content">
-        <div class="row p-0" id="contentrow">
-            <!-- Sidebar -->
-            <div class="sidebar col-12 col-md-3 col-xl-2 px-3 bg-light d-flex flex-column h-100" id="sidebar">
-              <hr />
-              <div class="flex-grow-1 overflow-auto">
-                <!-- Input Source -->
-                <div class="mb-3">
-                  <label class="form-label">Input Source</label>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
-                    <label class="form-check-label" for="fileInputRadio">Load from File</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
-                    <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
-                  </div>
-                </div>
-                <!-- File Input Section -->
-                <div id="fileSection" class="mb-3">
-                  <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
-                  <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
-                  
-                  <div class="mt-3">
-                    <label class="form-label">Or enter file URL:</label>
-                    <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" value="https://raw.githubusercontent.com/Mat-O-Lab/IOFMaterialsTutorial/refs/heads/main/sieving_ASTM_B214-07.ttl" class="form-control" />
-                    <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
-                  </div>
-                </div>                
-                <!-- SPARQL Input Section -->
-                <div id="sparqlSection" class="mb-3" style="display: none;">
-                  <div class="mb-2">
-                    <label for="endpointUrl" class="form-label">Endpoint URL:</label>
-                    <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
-                  </div>
-                  <div class="mb-2">
-                    <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
-                    <textarea id="sparqlQuery" class="form-control" rows="3">
-          CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
-                    </textarea>
-                  </div>
-                  <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
-                </div>
-                <hr />
-                <!-- Layout & Display Options -->
-                <div class="mb-3">
-                  <h6>Layout Options</h6>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
-                    <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
-                  </div>
-                  <div class="mb-2">
-                    <label for="layoutType" class="form-label">Layout Type:</label>
-                    <select id="layoutType" class="form-select form-select-sm">
-                      <option value="force">Force Directed</option>
-                      <option value="hierarchical" selected>Hierarchical</option>
-                    </select>
-                  </div>
-                  <div class="mb-2">
-                    <label for="connectionStyle" class="form-label">Connection Style:</label>
-                    <select id="connectionStyle" class="form-select form-select-sm">
-                      <option value="curved" selected>Curved</option>
-                      <option value="straight">Straight</option>
-                    </select>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
-                    <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="simpleNodeLabels"/>
-                    <label class="form-check-label" for="simpleNodeLabels">Simple Node Labels</label>
-                  </div>                  
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
-                    <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
-                  </div>
-                  <div class="d-flex flex-wrap gap-1 mt-2">
-                    <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
-                    <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
-                    <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
-                    <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
-                  </div>
-                </div>
+      <div class="row p-0" id="contentrow">
+        <!-- Sidebar -->
+        <div class="sidebar col-12 col-md-3 col-xl-2 px-3 bg-light d-flex flex-column h-100" id="sidebar">
+          <hr />
+          <div class="flex-grow-1 overflow-auto">
+            <!-- Input Source -->
+            <div class="mb-3">
+              <label class="form-label">Input Source</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="inputType" id="fileInputRadio" checked />
+                <label class="form-check-label" for="fileInputRadio">Load from File</label>
               </div>
-              <div class="p-2 border-top">
-                <small class="m-0">
-                  Source code available at
-                  <a href="https://github.com/ThHanke/rdfVis" target="_blank">GitHub</a>
-                </small>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="inputType" id="sparqlInputRadio" />
+                <label class="form-check-label" for="sparqlInputRadio">Load from SPARQL Endpoint</label>
               </div>
             </div>
-
-            <!-- Main Content -->
-            <main class="col-12 col-md-9 col-xl-10 px-4" id="mainContent">
-              <div id="errorContainer" class="text-danger w-100"></div>
-              <div id="contentArea">
-                <!-- Graph Container -->
-                <div id="graphContainer" class="mt-3">
-                  <!-- Graph renders here -->
-                </div>
-                <!-- Configuration Box floating at top left -->
-                <div id="configBox" class="card">
-                  <div id="configBoxHeader" class="card-header">
-                    <span>Configuration</span>
-                  </div>
-                  <div id="configBoxContent">
-                      <!-- vis-network configuration controls will appear here -->
-                  </div>  
-                  <div class="resize-handle"></div>
-                </div>
-                <!-- Moveable Legend Box -->
-                <div id="legend" class="card">
-                  <div class="card-header">Legend</div>
-                  <div class="card-body" id="legendList"></div>
-                  <div class="resize-handle"></div>
-                </div>
+            <!-- File Input Section -->
+            <div id="fileSection" class="mb-3">
+              <input type="file" id="fileInput" accept=".ttl,.txt" class="form-control" />
+              <button id="loadFileButton" class="btn btn-primary btn-sm mt-2">Load RDF Graph</button>
+              
+              <div class="mt-3">
+                <label class="form-label">Or enter file URL:</label>
+                <input type="text" id="fileUrlInput" placeholder="http://example.org/data.ttl" value="https://raw.githubusercontent.com/Mat-O-Lab/IOFMaterialsTutorial/refs/heads/main/sieving_ASTM_B214-07.ttl" class="form-control" />
+                <button id="loadFileUrlButton" class="btn btn-primary btn-sm mt-2">Load RDF from URL</button>
               </div>
-            </main>
+            </div>                
+            <!-- SPARQL Input Section -->
+            <div id="sparqlSection" class="mb-3" style="display: none;">
+              <div class="mb-2">
+                <label for="endpointUrl" class="form-label">Endpoint URL:</label>
+                <input type="text" id="endpointUrl" class="form-control" placeholder="https://example.org/sparql" />
+              </div>
+              <div class="mb-2">
+                <label for="sparqlQuery" class="form-label">SPARQL Query (CONSTRUCT):</label>
+                <textarea id="sparqlQuery" class="form-control" rows="3">
+          CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100
+                </textarea>
+              </div>
+              <button id="loadSparqlButton" class="btn btn-primary btn-sm">Load SPARQL Graph</button>
+            </div>
+            <hr />
+            <!-- Layout & Display Options -->
+            <div class="mb-3">
+              <h6>Layout Options</h6>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="disableImprovedLayout" />
+                <label class="form-check-label" for="disableImprovedLayout">Disable Improved Layout</label>
+              </div>
+              <div class="mb-2">
+                <label for="layoutType" class="form-label">Layout Type:</label>
+                <select id="layoutType" class="form-select form-select-sm">
+                  <option value="force">Force Directed</option>
+                  <option value="hierarchical" selected>Hierarchical</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label for="connectionStyle" class="form-label">Connection Style:</label>
+                <select id="connectionStyle" class="form-select form-select-sm">
+                  <option value="curved" selected>Curved</option>
+                  <option value="straight">Straight</option>
+                </select>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="hideIsolatedNodes" checked />
+                <label class="form-check-label" for="hideIsolatedNodes">Hide Isolated Nodes</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="simpleNodeLabels"/>
+                <label class="form-check-label" for="simpleNodeLabels">Simple Node Labels</label>
+              </div>                  
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="displayEdgeLabels" checked />
+                <label class="form-check-label" for="displayEdgeLabels">Display Edge Labels</label>
+              </div>
+              <div class="d-flex flex-wrap gap-1 mt-2">
+                <button id="expandAllButton" class="btn btn-secondary btn-sm">Expand All</button>
+                <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
+                <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
+                <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
+              </div>
+            </div>
+          </div>
+          <div class="p-2 border-top">
+            <small class="m-0">
+              Source code available at
+              <a href="https://github.com/ThHanke/rdfVis" target="_blank">GitHub</a>
+            </small>
+          </div>
         </div>
+        <!-- Main Content -->
+        <main class="col-12 col-md-9 col-xl-10 px-4" id="mainContent">
+          <div id="errorContainer" class="text-danger w-100"></div>
+          <div id="contentArea">
+            <!-- Graph Container -->
+            <div id="graphContainer" class="mt-3">
+              <!-- Graph renders here -->
+            </div>
+            <!-- Configuration Box floating at top left -->
+            <div id="configBox" class="card">
+              <div id="configBoxHeader" class="card-header">
+                <span>Configuration</span>
+              </div>
+              <div id="configBoxContent">
+                  <!-- vis-network configuration controls will appear here -->
+              </div>  
+              <div class="resize-handle"></div>
+            </div>
+            <!-- Moveable Legend Box -->
+            <div id="legend" class="card">
+              <div class="card-header">Legend</div>
+              <div class="card-body" id="legendList"></div>
+              <div class="resize-handle"></div>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
-    <!-- Modals for dit mode -->
+    <!-- Modals for edit mode -->
     <div class="modal fade" id="nodeModal" tabindex="-1" aria-labelledby="nodeModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -341,14 +325,6 @@
           <div class="modal-body">
             <form id="edgeForm">
               <div class="mb-3">
-                <label for="edgeFromInput" class="form-label">From Node ID</label>
-                <input type="text" class="form-control" id="edgeFromInput" placeholder="Enter source node ID">
-              </div>
-              <div class="mb-3">
-                <label for="edgeToInput" class="form-label">To Node ID</label>
-                <input type="text" class="form-control" id="edgeToInput" placeholder="Enter target node ID">
-              </div>
-              <div class="mb-3">
                 <label for="edgeLabelInput" class="form-label">Label (optional)</label>
                 <input type="text" class="form-control" id="edgeLabelInput" placeholder="Enter edge label">
               </div>
@@ -360,355 +336,33 @@
           </div>
         </div>
       </div>
-    </div>    
-    <!-- Floating scroll-to-top button, placed near the end of your body -->
+    </div>
+    <!-- Floating scroll-to-top button -->
     <button id="scrollTopBtn" class="scroll-top-btn d-md-none">↑ Top</button>
 
-		<!-- Bootstrap Bundle with Popper -->
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-		<!-- vis-network -->
-		<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-		<!-- rdflib -->
-		<script src="https://unpkg.com/rdflib@2.2.4/dist/rdflib.min.js"></script>
-
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- vis-network -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- rdflib -->
+    <script src="https://unpkg.com/rdflib@2.2.4/dist/rdflib.min.js"></script>
     <script>
-      // Sidebar Toggle Functionality
-    const toggleBtn = document.getElementById("toggleSidebar");
-    const sidebar = document.getElementById("sidebar");
-    const contentRow = document.getElementById("contentrow");
-
-    toggleBtn.addEventListener("click", () => {
-      // Toggle sidebar visibility using Bootstrap's d-none
-      sidebar.classList.toggle("d-none");
-      // Toggle a custom class on the row
-      contentRow.classList.toggle("sidebar-collapsed");
-    });
-
-    document.getElementById("scrollTopBtn").addEventListener("click", () => {
-      console.log('scroll up')
-      const contentRow = document.getElementById("contentrow");
-      contentRow.scrollTo({ top: 0, behavior: "smooth" });
-    });
-    
-    
-    // Toggle Config Box from Navbar button
-    document.getElementById("toggleConfigBox").addEventListener("click", () => {
-      const configBox = document.getElementById("configBox");
-      if (configBox.style.display === "none" || configBox.style.display === "") {
-        configBox.style.display = "flex";
-      } else {
-        configBox.style.display = "none";
-      }
-    });
-
-    // Toggle legend visibility when the "Legend" button is clicked.
-    document.getElementById("toggleLegend").addEventListener("click", function() {
-      const legend = document.getElementById("legend");
-      if (legend.style.display === "none" || legend.style.display === "") {
-        legend.style.display = "block";
-      } else {
-        legend.style.display = "none";
-      }
-    });
-    // Select all cards for dragging and resizing
-    const cards = document.querySelectorAll('.card');
-  
-    cards.forEach(card => {
-      const header = card.querySelector('.card-header');
-      const resizeHandle = card.querySelector('.resize-handle');
-      let isDragging = false;
-      let isResizing = false;
-      let offsetX, offsetY;
-  
-      // Get the viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-  
-      // Draggable functionality (always applied)
-      header.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        offsetX = e.clientX - card.offsetLeft;
-        offsetY = e.clientY - card.offsetTop;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', () => {
-          isDragging = false;
-          document.removeEventListener('mousemove', onMouseMove);
-        });
-      });
-  
-      function onMouseMove(e) {
-        if (isDragging) {
-          let newLeft = e.clientX - offsetX;
-          let newTop = e.clientY - offsetY;
-      
-          // Ensure it stays within the viewport
-          newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - card.offsetWidth));
-          newTop = Math.max(0, Math.min(newTop, window.innerHeight - card.offsetHeight));
-      
-          card.style.left = `${newLeft}px`;
-          card.style.top = `${newTop}px`;
+      /**********************
+       * Utility Functions
+       **********************/
+      function createSvgElement(tag, attrs) {
+        var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (var key in attrs) {
+          elem.setAttribute(key, attrs[key]);
         }
+        return elem;
       }
-  
-      // Resizable functionality (only if a resize handle exists)
-      if (resizeHandle) {
-        resizeHandle.addEventListener('mousedown', (e) => {
-          isResizing = true;
-          document.addEventListener('mousemove', onMouseResize);
-          document.addEventListener('mouseup', () => {
-            isResizing = false;
-            document.removeEventListener('mousemove', onMouseResize);
-          });
-        });
-  
-        function onMouseResize(e) {
-          if (isResizing) {
-            // Resize the card based on mouse position
-            const newWidth = e.clientX - card.offsetLeft;
-            const newHeight = e.clientY - card.offsetTop;
-  
-            // Update card size
-            card.style.width = `${newWidth}px`;
-            card.style.height = `${newHeight}px`;
-          }
-        }
+      function showError(message) {
+        document.getElementById("errorContainer").innerText = message;
       }
-    });
-    </script>
-		<script>
-			// Global variables
-			var networkNodes = null;
-			var networkEdges = null;
-			var network = null;
-      var config = {};
-			var store = $rdf.graph();
-      var prefixNamespaceMapping = {};
-			
-      const excludePredicatestoCluster = ['rdf:type','rdfs:label','dcterms:','owl:'];
-      const clusteringThreshold = 10;
-			var generatedPrefixCounter = 1;
-			var graphData ={};     
-      
-			var currentNodeRadius = 15;
-			var currentFontSize = 10;
-
-      function saveConfigOptions(config) {
-        //console.log("savingConfig")
-        //console.log(config.visNetwork.physics)
-        localStorage.setItem("visNetworkConfig", JSON.stringify(config));
+      function clearError() {
+        document.getElementById("errorContainer").innerText = "";
       }
-      
-      function loadConfigOptions() {
-        currentNodeRadius = 15;
-				currentFontSize = 10;
-        
-        const defaultConfig = {
-          layoutType: "hierarchical",
-          connectionStyle: "curved",
-          hideIsolatedNodes: true,
-          simpleNodeLabels: false,
-          displayEdgeLabels: true,
-          disableImprovedLayout: false,
-          visNetwork: {
-            layout: { hierarchical: {
-              enabled: true,
-              levelSeparation: 150,
-              nodeSpacing: 100,
-              treeSpacing: 200,
-              blockShifting: true,
-              edgeMinimization: true,
-              parentCentralization: true,
-              direction: 'LR',        // UD, DU, LR, RL
-              sortMethod: 'hubsize',  // hubsize, directed
-              shakeTowards: 'leaves'  // roots, leaves
-                },
-              improvedLayout: true
-            },
-            manipulation: {
-              enabled: true,
-              addNode: function (nodeData, callback) {
-                // Flag to check if the user has responded (saved or canceled)
-                let nodeSubmitted = false;
-                const nodeModalEl = document.getElementById('nodeModal');
-                const nodeModal = new bootstrap.Modal(nodeModalEl, {
-                  backdrop: 'static', // Prevent closing by clicking outside
-                  keyboard: false,    // Prevent closing with the Esc key
-                });
-                nodeModal.show();
-          
-                // Save Node event
-                document.getElementById('saveNodeBtn').addEventListener(
-                  'click',
-                  function onSave() {
-                    const nodeId = document.getElementById('nodeIdInput').value.trim();
-                    const nodeLabel = document.getElementById('nodeLabelInput').value.trim();
-                    const nodeType = document.getElementById('nodeTypeInput').value.trim();
-          
-                    if (nodeId && nodeLabel && nodeType) {
-                      nodeData.id = nodeId;
-                      nodeData.label = nodeLabel;
-                      nodeData.type = nodeType;
-                      nodeData.shape = 'box';
-                      nodeSubmitted = true;
-                      nodeModal.hide();
-                      callback(nodeData);
-                    } else {
-                      alert('Please fill in all fields.');
-                    }
-                  },
-                  { once: true }
-                );
-          
-                // Cancel Node event
-                document.getElementById('cancelNodeBtn').addEventListener(
-                  'click',
-                  function onCancel() {
-                    nodeSubmitted = true;
-                    nodeModal.hide();
-                    callback(null);
-                  },
-                  { once: true }
-                );
-          
-                // If the modal is closed by other means (e.g., clicking the close button)
-                nodeModalEl.addEventListener(
-                  'hidden.bs.modal',
-                  function onHidden() {
-                    if (!nodeSubmitted) {
-                      callback(null);
-                    }
-                  },
-                  { once: true }
-                );
-              },
-          
-              addEdge: function (edgeData, callback) {
-                let edgeSubmitted = false;
-                const edgeModalEl = document.getElementById('edgeModal');
-                const edgeModal = new bootstrap.Modal(edgeModalEl, {
-                  backdrop: 'static',
-                  keyboard: false,
-                });
-                edgeModal.show();
-          
-                // Save Edge event
-                document.getElementById('saveEdgeBtn').addEventListener(
-                  'click',
-                  function onSave() {
-                    const edgeFrom = document.getElementById('edgeFromInput').value.trim();
-                    const edgeTo = document.getElementById('edgeToInput').value.trim();
-                    const edgeLabel = document.getElementById('edgeLabelInput').value.trim();
-          
-                    if (edgeFrom && edgeTo) {
-                      edgeData.from = edgeFrom;
-                      edgeData.to = edgeTo;
-                      edgeData.label = edgeLabel; // This is optional
-                      edgeSubmitted = true;
-                      edgeModal.hide();
-                      callback(edgeData);
-                    } else {
-                      alert("Please fill in both the 'From' and 'To' fields.");
-                    }
-                  },
-                  { once: true }
-                );
-          
-                // Cancel Edge event
-                document.getElementById('cancelEdgeBtn').addEventListener(
-                  'click',
-                  function onCancel() {
-                    edgeSubmitted = true;
-                    edgeModal.hide();
-                    callback(null);
-                  },
-                  { once: true }
-                );
-          
-                // Handle closing the modal without explicit action
-                edgeModalEl.addEventListener(
-                  'hidden.bs.modal',
-                  function onHidden() {
-                    if (!edgeSubmitted) {
-                      callback(null);
-                    }
-                  },
-                  { once: true }
-                );
-              },
-            },
-            interaction: { hover: true },
-            edges: { smooth: { enabled: true, type: "continuous" } },
-            nodes: {
-              widthConstraint: { maximum: 100 },
-              font: { multi: true, size: currentFontSize },
-              shapeProperties: { useImageSize: false }
-            }
-          }
-        };
-        const configStr = localStorage.getItem("visNetworkConfig");
-        let config = {};
-
-        if (configStr) {
-            config = JSON.parse(configStr);
-        }
-        // Merge config with defaultConfig
-        //const finalConfig = Object.assign({}, defaultConfig, config);
-        // Merge config with defaultConfig, prioritizing config properties
-        const finalConfig = {
-          ...defaultConfig,
-          ...config
-        };
-
-        const layoutType = document.getElementById("layoutType").value;
-				if (finalConfig.visNetwork.layout.hierarchical.enabled) {
-          document.getElementById("layoutType").value="hierarchical";
-        } else {
-          document.getElementById("layoutType").value="force";
-        }
-        // Set the values in the UI
-        document.getElementById("connectionStyle").value = finalConfig.connectionStyle;
-        document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
-        document.getElementById("simpleNodeLabels").checked = finalConfig.simpleNodeLabels;
-        document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
-        document.getElementById("disableImprovedLayout").checked = finalConfig.disableImprovedLayout;
-        saveConfigOptions(finalConfig)
-
-        return finalConfig;
-      }
-
-      //spawn worker
-      let worker = new Worker("worker.js");
-
-      // Helper: Create an SVG element with attributes.
-			function createSvgElement(tag, attrs) {
-				var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
-				for (var key in attrs) {
-					elem.setAttribute(key, attrs[key]);
-				}
-				return elem;
-			}
-
-			// Error display functions.
-			function showError(message) {
-				document.getElementById("errorContainer").innerText = message;
-			}
-			function clearError() {
-				document.getElementById("errorContainer").innerText = "";
-			}
-
-			// Toggle input sections.
-			document.getElementById("fileInputRadio").addEventListener("change", function () {
-				document.getElementById("fileSection").style.display = "block";
-				document.getElementById("sparqlSection").style.display = "none";
-			});
-			document.getElementById("sparqlInputRadio").addEventListener("change", function () {
-				document.getElementById("fileSection").style.display = "none";
-				document.getElementById("sparqlSection").style.display = "block";
-			});
-      
-
-			
-			// Helper function to perform fetch with a timeout.
       function fetchWithTimeout(url, options = {}, timeout = 10000) {
         return new Promise((resolve, reject) => {
           const controller = new AbortController();
@@ -716,7 +370,6 @@
             controller.abort();
             reject(new Error("Request timed out"));
           }, timeout);
-
           fetch(url, { ...options, signal: controller.signal })
             .then(response => {
               clearTimeout(timer);
@@ -728,36 +381,738 @@
             });
         });
       }
+      function getDefaultConfig() {
+        return {
+          layoutType: "hierarchical",
+          connectionStyle: "curved",
+          hideIsolatedNodes: true,
+          simpleNodeLabels: false,
+          displayEdgeLabels: true,
+          disableImprovedLayout: false,
+          visNetwork: {
+            layout: { 
+              hierarchical: {
+                enabled: true,
+                levelSeparation: 150,
+                nodeSpacing: 100,
+                treeSpacing: 200,
+                blockShifting: true,
+                edgeMinimization: true,
+                parentCentralization: true,
+                direction: 'LR',
+                sortMethod: 'hubsize',
+                shakeTowards: 'leaves'
+              },
+              improvedLayout: true
+            },
+            interaction: { hover: true },
+            edges: { smooth: { enabled: true, type: "continuous" } },
+            nodes: {
+              widthConstraint: { maximum: 100 },
+              font: { multi: true, size: currentFontSize },
+              shapeProperties: { useImageSize: false }
+            }
+          }
+        };
+      }
 
+      /**********************
+       * Global Variables
+       **********************/
+      var network = null, networkNodes = null, networkEdges = null;
+      var config = {};
+      var store = $rdf.graph();
+      const excludePredicatestoCluster = ['rdf:type','rdfs:label','dcterms:','owl:'];
+      const clusteringThreshold = 10;
+      var generatedPrefixCounter = 1;
+      var graphData = {};
+      var currentNodeRadius = 15;
+      const currentNodeShape="box";
+      var currentFontSize = 10;
+      var worker = new Worker("worker.js");
+
+      /**********************
+       * Modal Functions for Manipulation
+       **********************/
+       function addNodeModal(nodeData, callback) {
+        let nodeSubmitted = false;
+        const nodeModalEl = document.getElementById('nodeModal');
+        const nodeModal = new bootstrap.Modal(nodeModalEl, {
+          backdrop: 'static',
+          keyboard: false,
+        });
+        nodeModal.show();
+      
+        document.getElementById('saveNodeBtn').addEventListener(
+          'click',
+          function onSave() {
+            const rawNodeId = document.getElementById('nodeIdInput').value.trim();
+            const nodeLabelInput = document.getElementById('nodeLabelInput').value.trim();
+            const nodeType = document.getElementById('nodeTypeInput').value.trim();
+      
+            if (!rawNodeId || !nodeLabelInput || !nodeType) {
+              alert('Please fill in all fields.');
+              return;
+            }
+            // Test if the node id is unique.
+            if (!isUniqueNodeId(rawNodeId)) {
+              alert('ID already exists. Please choose a unique ID.');
+              return;
+            }
+            // Expand the raw id to a full IRI.
+            const expandedId = expandId(rawNodeId);
+            nodeData.id = expandedId;
+            nodeData.iri = expandedId;
+            nodeData.shortIRI = rawNodeId;
+            nodeData.type = nodeType;
+            // Set the baseLabel from the input.
+            nodeData.rdfsLabel = nodeLabelInput;
+            // Set the label depending on whether simple labels are enabled.
+            if (config.simpleNodeLabels) {
+              nodeData.label = nodeLabelInput;
+            } else {
+              nodeData.label = NodeLabel(nodeData);
+            }
+            // Apply tooltip (using the title property) to the node.
+            nodeData.title = NodeTooltip(nodeData);
+            nodeData.shape = 'box';
+            nodeData.expanded = true;
+            nodeSubmitted = true;
+            nodeModal.hide();
+            callback(nodeData);
+          },
+          { once: true }
+        );
+      
+        document.getElementById('cancelNodeBtn').addEventListener(
+          'click',
+          function onCancel() {
+            nodeSubmitted = true;
+            nodeModal.hide();
+            callback(null);
+          },
+          { once: true }
+        );
+      
+        nodeModalEl.addEventListener(
+          'hidden.bs.modal',
+          function onHidden() {
+            if (!nodeSubmitted) {
+              callback(null);
+            }
+          },
+          { once: true }
+        );
+      }
+      
+      function addEdgeModal(edgeData, callback) {
+        if (edgeData.from && edgeData.to) {
+          showEdgeModal(edgeData);
+        } else {
+          alert("Unable to determine source and target nodes. Please try again.");
+          callback(edgeData);
+        }
+        // The modal now appears for an optional edge label.
+        function showEdgeModal(edgeData) {
+          let edgeSubmitted = false;
+          const edgeModalEl = document.getElementById('edgeModal');
+          const edgeModal = new bootstrap.Modal(edgeModalEl, {
+            backdrop: 'static',
+            keyboard: false,
+          });
+          edgeModal.show();
+      
+          document.getElementById('saveEdgeBtn').addEventListener(
+            'click',
+            function onSave() {
+              const edgeLabelInput = document.getElementById('edgeLabelInput').value.trim();
+              // For edges, we use the entered label as the baseLabel.
+              edgeData.shortIRI = edgeLabelInput;
+              // Use NodeTitle function if simple labels are not enabled.
+              edgeData.label = edgeLabelInput;
+              // Set tooltip for the edge.
+              edgeData.title = "IRI: "+expandId(edgeLabelInput);
+              edgeSubmitted = true;
+              edgeModal.hide();
+              callback(edgeData);
+            },
+            { once: true }
+          );
+      
+          document.getElementById('cancelEdgeBtn').addEventListener(
+            'click',
+            function onCancel() {
+              edgeSubmitted = true;
+              edgeModal.hide();
+              callback(null);
+            },
+            { once: true }
+          );
+      
+          edgeModalEl.addEventListener(
+            'hidden.bs.modal',
+            function onHidden() {
+              if (!edgeSubmitted) {
+                callback(null);
+              }
+            },
+            { once: true }
+          );
+        }
+      }
+      
+      /**********************
+       * UI Control Functions
+       **********************/
+      function initUIControls() {
+        // Sidebar toggle
+        const toggleBtn = document.getElementById("toggleSidebar");
+        const sidebar = document.getElementById("sidebar");
+        const contentRow = document.getElementById("contentrow");
+        toggleBtn.addEventListener("click", () => {
+          sidebar.classList.toggle("d-none");
+          contentRow.classList.toggle("sidebar-collapsed");
+        });
+        // Scroll-to-top button
+        document.getElementById("scrollTopBtn").addEventListener("click", () => {
+          contentRow.scrollTo({ top: 0, behavior: "smooth" });
+        });
+        // Toggle Config Box
+        document.getElementById("toggleConfigBox").addEventListener("click", () => {
+          const configBox = document.getElementById("configBox");
+          configBox.style.display = (configBox.style.display === "none" || configBox.style.display === "") ? "flex" : "none";
+        });
+        // Toggle Legend
+        document.getElementById("toggleLegend").addEventListener("click", () => {
+          const legend = document.getElementById("legend");
+          legend.style.display = (legend.style.display === "none" || legend.style.display === "") ? "block" : "none";
+        });
+      }
+      function initDraggableCards() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+          const header = card.querySelector('.card-header');
+          const resizeHandle = card.querySelector('.resize-handle');
+          let isDragging = false, isResizing = false, offsetX, offsetY;
+          header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - card.offsetLeft;
+            offsetY = e.clientY - card.offsetTop;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', () => {
+              isDragging = false;
+              document.removeEventListener('mousemove', onMouseMove);
+            });
+          });
+          function onMouseMove(e) {
+            if (isDragging) {
+              let newLeft = e.clientX - offsetX;
+              let newTop = e.clientY - offsetY;
+              newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - card.offsetWidth));
+              newTop = Math.max(0, Math.min(newTop, window.innerHeight - card.offsetHeight));
+              card.style.left = `${newLeft}px`;
+              card.style.top = `${newTop}px`;
+            }
+          }
+          if (resizeHandle) {
+            resizeHandle.addEventListener('mousedown', (e) => {
+              isResizing = true;
+              document.addEventListener('mousemove', onMouseResize);
+              document.addEventListener('mouseup', () => {
+                isResizing = false;
+                document.removeEventListener('mousemove', onMouseResize);
+              });
+            });
+            function onMouseResize(e) {
+              if (isResizing) {
+                const newWidth = e.clientX - card.offsetLeft;
+                const newHeight = e.clientY - card.offsetTop;
+                card.style.width = `${newWidth}px`;
+                card.style.height = `${newHeight}px`;
+              }
+            }
+          }
+        });
+      }
+
+      /**********************
+       * Network & Config Functions
+       **********************/
+      function saveConfigOptions(config) {
+        localStorage.setItem("visNetworkConfig", JSON.stringify(config));
+      }
+      function loadConfigOptions() {
+        currentNodeRadius = 15;
+        currentFontSize = 10;
+        const defaultConfig = getDefaultConfig();
+        const configStr = localStorage.getItem("visNetworkConfig");
+        let storedConfig = configStr ? JSON.parse(configStr) : {};
+        const finalConfig = { ...defaultConfig, ...storedConfig };
+        // Set UI values based on config
+        document.getElementById("layoutType").value = finalConfig.visNetwork.layout.hierarchical.enabled ? "hierarchical" : "force";
+        document.getElementById("connectionStyle").value = finalConfig.connectionStyle;
+        document.getElementById("hideIsolatedNodes").checked = finalConfig.hideIsolatedNodes;
+        document.getElementById("simpleNodeLabels").checked = finalConfig.simpleNodeLabels;
+        document.getElementById("displayEdgeLabels").checked = finalConfig.displayEdgeLabels;
+        document.getElementById("disableImprovedLayout").checked = finalConfig.disableImprovedLayout;
+        saveConfigOptions(finalConfig);
+        return finalConfig;
+      }
+      function initializeNetwork() {
+        const configBoxContent = document.getElementById("configBoxContent");
+        configBoxContent.innerHTML = '';
+        const confoptions = {
+          configure: {
+            enabled: true,
+            filter: ["physics"],
+            showButton: false,
+            container: configBoxContent
+          },
+          // add edit functions
+          manipulation: {
+            enabled: true,
+            addNode: addNodeModal,
+            addEdge: addEdgeModal
+          }
+        };
+        network = new vis.Network(document.getElementById("graphContainer"), { 
+          nodes: new vis.DataSet({}), 
+          edges: new vis.DataSet({}) 
+        }, confoptions);
+      }
+      function getNetworkNodes(hideIsolated = false, simpleNodeLabels = true) {
+        if (hideIsolated) {
+          var connectedIds = new Set();
+          graphData.network.edges.forEach(edge => {
+            connectedIds.add(edge.from);
+            connectedIds.add(edge.to);
+          });
+          networkNodes = new vis.DataSet(graphData.network.nodes.filter(n => connectedIds.has(n.id)));
+        } else {
+          networkNodes = new vis.DataSet(graphData.network.nodes);
+        }
+        networkNodes.forEach(node => {
+          node.size = currentNodeRadius;
+          node.shape = currentNodeShape;
+          node.label = NodeLabel(node,simpleNodeLabels)
+          networkNodes.update(node);
+        });
+        return networkNodes;
+      }
+      function showedgelabels(hidden = false) {
+        network.body.data.edges.forEach(edge => {
+          edge.label = hidden ? "" : edge.shortIRI;
+        });
+      }
+      // Checks whether a given raw node id is unique in the current network.
+      function isUniqueNodeId(rawId) {
+        if (!network || !network.body || !network.body.data || !network.body.data.nodes) return true;
+        // Note: if the user enters a raw id like "iof:NewId", we check uniqueness using the raw form.
+        const existing = network.body.data.nodes.get(rawId);
+        return existing === null;
+      }
+
+      // Expands a raw id (e.g., "iof:NewId") to a full IRI using the prefix mapping.
+      // If no colon is found, or the prefix is unknown, it falls back to basePrefix.
+      function expandId(rawId) {
+        if (rawId.includes(":")) {
+          const parts = rawId.split(":");
+          const prefix = parts[0];
+          const local = parts.slice(1).join(":");
+          console.log(graphData.prefixColorMapping)
+          if (graphData.prefixColorMapping[prefix]) {
+            return graphData.prefixColorMapping[prefix].uri + local;
+          } else {
+            return graphData.prefixColorMapping['base'].uri + rawId;
+          }
+        } else {
+          return graphData.prefixColorMapping['base'].uri + rawId;
+        }
+      }
+      function NodeLabel(node,simpleNodeLabels){
+        if (node.type === 'Literal') {
+          return node.label
+        }
+        if (simpleNodeLabels){
+          return node.rdfsLabel
+        } else {
+          return "<b>" + node.shortIRI + "</b>" + (node.rdfsLabel ? "\n" + node.rdfsLabel : "");
+        }
+      }
+      function NodeTooltip(node){
+        var excludeKeys = ['x','y','shape', 'color', 'label', 'font', "id", "rdfsLabel"];
+        var tooltipContent = "";
+        for (var key in node) {
+          if (excludeKeys.indexOf(key) < 0) {
+            tooltipContent += key + ": " + node[key] + "\n";
+          }
+        }
+        return tooltipContent;
+      }
+      // Construct a simple tooltip (title) by including properties except for some keys.
+    
+      function renderNetwork(cluster = true) {
+        networkNodes = getNetworkNodes(config.hideIsolatedNodes, config.simpleNodeLabels);
+        networkEdges = new vis.DataSet(graphData.network.edges);
+        showedgelabels(!config.displayEdgeLabels);
+        network.setData({ nodes: networkNodes, edges: networkEdges });
+        if (cluster) {
+          applyClusteringByHubsize();
+        }
+        network.on("oncontext", function (params) {
+          params.event.preventDefault();
+          const pointer = params.pointer.DOM;
+          const nodeId = network.getNodeAt(pointer);
+          if (nodeId) {
+            if (network.isCluster(nodeId)) {
+              network.openCluster(nodeId);
+            } else {
+              reClusterIncoming(nodeId);
+            }
+          }
+        });
+        network.on("doubleClick", function (params) {
+          if (params.nodes.length === 1) {
+            const nodeId = params.nodes[0];
+            if (network.isCluster(nodeId)) {
+              network.openCluster(nodeId);
+            } else {
+              toggleNode(nodeId);
+            }
+          }
+        });
+        updateLegend(graphData.prefixColorMapping);
+      }
+      function applyClusteringByHubsize() {
+        var clusterOptionsByData = {
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+            clusterOptions.label = childNodes[0].baseLabel + "\n(and " + childNodes.length + " others)";
+            clusterOptions.shape = "circle";
+            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
+            clusterOptions.repNode = childNodes[0];
+            return clusterOptions;
+          },
+          clusterNodeProperties: {
+            borderWidth: 3,
+            shape: "circle",
+          },
+        };
+        network.clusterByHubsize(undefined, clusterOptionsByData);
+      }
+      function reClusterIncoming(nodeId) {
+        clusterSpecificNodeByHubsize(nodeId, 3);
+      }
+      function clusterSpecificNodeByHubsize(nodeId, hubsize) {
+        const nodeData = network.body.data.nodes.get(nodeId);
+        if (!nodeData) return;
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(edgeId => {
+          var edge = network.body.data.edges.get(edgeId);
+          return edge && edge.from === nodeId;
+        });
+        if (outgoingEdgeIds.length === 0) return;
+        var outgoingNodeIds = outgoingEdgeIds.map(edgeId => {
+          var edge = network.body.data.edges.get(edgeId);
+          return edge.to;
+        });
+        if (outgoingNodeIds.length < hubsize) return;
+        const joinCondition = (nodeOptions) => {
+          return nodeOptions.id === nodeId || outgoingNodeIds.includes(nodeOptions.id);
+        };
+        network.cluster({
+          joinCondition: joinCondition,
+          processProperties: function (clusterOptions, childNodes, childEdges) {
+            clusterOptions.label = nodeData.baseLabel + "\n(and " + childNodes.length + " others)";
+            clusterOptions.shape = "circle";
+            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
+            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
+            clusterOptions.repNode = nodeData;
+            return clusterOptions;
+          },
+          clusterNodeProperties: {
+            borderWidth: 3,
+            shape: "circle",
+          },
+        });
+      }
+      function updateLegend(prefixColorMapping) {
+        var legendContainer = document.getElementById("legendList");
+        legendContainer.innerHTML = "";
+        for (const prefix in prefixColorMapping) {
+          if (prefixColorMapping.hasOwnProperty(prefix)) {
+            const { uri, color } = prefixColorMapping[prefix];
+            const rowItem = document.createElement("div");
+            rowItem.classList.add("row");
+            const leftContainer = document.createElement("div");
+            leftContainer.classList.add("col-12", "col-md-3");
+            const colorBox = document.createElement("span");
+            colorBox.classList.add("legend-color");
+            colorBox.style.backgroundColor = color;
+            colorBox.style.width = "15px";
+            colorBox.style.height = "15px";
+            colorBox.style.display = "inline-block";
+            colorBox.style.marginRight = "10px";
+            colorBox.style.border = "1px solid #000";
+            const prefixLabel = document.createElement("span");
+            prefixLabel.innerText = prefix;
+            prefixLabel.classList.add("fw-bold", "legend-prefix");
+            leftContainer.appendChild(colorBox);
+            leftContainer.appendChild(prefixLabel);
+            rowItem.appendChild(leftContainer);
+            const uriText = document.createElement("div");
+            uriText.innerText = uri;
+            uriText.classList.add("col-12", "col-md-9", "text-muted", "small", "legend-text");
+            rowItem.appendChild(uriText);
+            legendContainer.appendChild(rowItem);
+          }
+        }
+      }
+      function toggleNode(nodeId) {
+        const node = network.body.data.nodes.get(nodeId);
+        if (!node) return;
+        if (node.expanded) {
+          collapseNode(nodeId);
+        } else {
+          expandNode(nodeId);
+        }
+      }
+      function collapseEdge(edgeId) {
+        var edge = network.body.data.edges.get(edgeId);
+        if (edge) {
+          var fromNodeId = edge.from;
+          var toNodeId = edge.to;
+          network.body.data.edges.update({ id: edgeId, hidden: true });
+          var incomingEdges = network.getConnectedEdges(toNodeId).filter(eid => {
+            var e = network.body.data.edges.get(eid);
+            return e && e.to === toNodeId && !e.hidden && e.from !== fromNodeId;
+          });
+          if (incomingEdges.length === 0) {
+            network.body.data.nodes.update({ id: toNodeId, hidden: true });
+          }
+        }
+      }
+      function collapseNode(nodeId) {
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(edgeId => {
+          var edge = network.body.data.edges.get(edgeId);
+          return edge && edge.from === nodeId;
+        });
+        outgoingEdgeIds.forEach(edgeId => collapseEdge(edgeId));
+        var node = network.body.data.nodes.get(nodeId);
+        network.body.data.nodes.update({
+          id: nodeId,
+          label: node.label.replace('[-]', '[+]'),
+          expanded: false
+        });
+      }
+      function expandNode(nodeId) {
+        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(edgeId => {
+          var edge = network.body.data.edges.get(edgeId);
+          return edge && edge.from === nodeId;
+        });
+        outgoingEdgeIds.forEach(edgeId => {
+          var edge = network.body.data.edges.get(edgeId);
+          network.body.data.edges.update({ id: edgeId, hidden: false });
+          var connectedNodeId = edge.to;
+          network.body.data.nodes.update({ id: connectedNodeId, hidden: false });
+        });
+        var node = network.body.data.nodes.get(nodeId);
+        network.body.data.nodes.update({
+          id: nodeId,
+          label: node.label.replace('[+]', '[-]'),
+          expanded: true
+        });
+      }
+      function openAllClusters(network) {
+        let clusters = Object.keys(network.body.nodes).filter(nodeId => network.isCluster(nodeId));
+        clusters.forEach(clusterId => network.openCluster(clusterId));
+      }
+      function exportSVG() {
+        const container = document.getElementById("graphContainer");
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svgElem = createSvgElement("svg", { width: width, height: height, xmlns: svgNS });
+        const defs = createSvgElement("defs", {});
+        const marker = createSvgElement("marker", {
+          id: "arrow",
+          markerWidth: "10",
+          markerHeight: "10",
+          refX: "10",
+          refY: "3",
+          orient: "auto",
+          markerUnits: "strokeWidth"
+        });
+        const arrowPath = createSvgElement("path", { d: "M0,0 L0,6 L9,3 z", fill: "#000" });
+        marker.appendChild(arrowPath);
+        defs.appendChild(marker);
+        svgElem.appendChild(defs);
+        const positions = network.getPositions();
+        networkEdges.get().forEach(edge => {
+          if (edge.hidden) return;
+          const fromPos = positions[edge.from];
+          const toPos = positions[edge.to];
+          if (!fromPos || !toPos) return;
+          const line = createSvgElement("line", {
+            x1: fromPos.x,
+            y1: fromPos.y,
+            x2: toPos.x,
+            y2: toPos.y,
+            stroke: "#000",
+            "stroke-width": "2",
+            "marker-end": "url(#arrow)"
+          });
+          svgElem.appendChild(line);
+          if (document.getElementById("displayEdgeLabels").checked && edge.label) {
+            const midX = (fromPos.x + toPos.x) / 2;
+            const midY = (fromPos.y + toPos.y) / 2;
+            const text = createSvgElement("text", {
+              x: midX,
+              y: midY,
+              "font-size": "10",
+              fill: "#000",
+              "text-anchor": "middle"
+            });
+            text.textContent = edge.label;
+            svgElem.appendChild(text);
+          }
+        });
+        networkNodes.get().forEach(node => {
+          if (node.hidden) return;
+          const pos = positions[node.id];
+          if (!pos) return;
+          if (node.shape === "circle") {
+            const radius = node.size || currentNodeRadius;
+            const circle = createSvgElement("circle", {
+              cx: pos.x,
+              cy: pos.y,
+              r: radius,
+              fill: node.color && node.color.background ? node.color.background : "#CCCCCC",
+              stroke: node.color && node.color.border ? node.color.border : "#000",
+              "stroke-width": "2"
+            });
+            svgElem.appendChild(circle);
+          } else {
+            const rect = createSvgElement("rect", {
+              x: pos.x - currentNodeRadius,
+              y: pos.y - currentNodeRadius,
+              width: currentNodeRadius * 2,
+              height: currentNodeRadius * 2,
+              fill: node.color && node.color.background ? node.color.background : "#CCCCCC",
+              stroke: node.color && node.color.border ? node.color.border : "#000",
+              "stroke-width": "2"
+            });
+            svgElem.appendChild(rect);
+          }
+          const text = createSvgElement("text", {
+            x: pos.x,
+            y: pos.y + 4,
+            "font-size": currentFontSize,
+            fill: "#000",
+            "text-anchor": "middle"
+          });
+          text.textContent = node.label;
+          svgElem.appendChild(text);
+        });
+        // Legend export (if needed)
+        const legend = document.getElementById("legend");
+        const legendRect = legend.getBoundingClientRect();
+        const graphRect = document.getElementById("graphContainer").getBoundingClientRect();
+        const legendGroup = createSvgElement("g", {});
+        legendGroup.setAttribute("transform", `translate(${legendRect.left - graphRect.left}, ${legendRect.top - graphRect.top})`);
+        const legendBg = createSvgElement("rect", {
+          x: 0,
+          y: 0,
+          width: legendRect.width,
+          height: legendRect.height,
+          fill: "#fff",
+          stroke: "#000"
+        });
+        legendGroup.appendChild(legendBg);
+        const legendItems = document.getElementById("legendList").children;
+        for (let i = 0; i < legendItems.length; i++) {
+          const item = legendItems[i];
+          const color = item.querySelector(".legend-color").style.background;
+          const prefix = item.querySelector("span").innerText;
+          const colorRect = createSvgElement("rect", {
+            x: 5,
+            y: 5 + i * 25,
+            width: 15,
+            height: 15,
+            fill: color,
+            stroke: "#000"
+          });
+          legendGroup.appendChild(colorRect);
+          const prefixText = createSvgElement("text", {
+            x: 25,
+            y: 17 + i * 25,
+            "font-size": "10",
+            fill: "#000"
+          });
+          prefixText.textContent = prefix;
+          legendGroup.appendChild(prefixText);
+        }
+        svgElem.appendChild(legendGroup);
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgElem);
+        const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement("a");
+        downloadLink.href = url;
+        downloadLink.download = "graph.svg";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+      function exportDOT() {
+        let dotStr = "digraph G {\n";
+        networkNodes.get().forEach(node => {
+          const labelMatch = node.label.match(/<b>(.*?)<\/b>/);
+          const labelText = labelMatch ? labelMatch[1] : node.label;
+          dotStr += `  "${node.id}" [label="${labelText}"];\n`;
+        });
+        networkEdges.get().forEach(edge => {
+          const label = edge.label ? ` [label="${edge.label}"]` : "";
+          dotStr += `  "${edge.from}" -> "${edge.to}"${label};\n`;
+        });
+        dotStr += "}\n";
+        const blob = new Blob([dotStr], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement("a");
+        downloadLink.href = url;
+        downloadLink.download = "graph.dot";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+
+      /**********************
+       * Data Loading & Processing
+       **********************/
       function loadFromURL(sourceUrl) {
         if (sourceUrl) {
           fetchWithTimeout(sourceUrl, {}, 10000)
             .then(response => {
               if (!response.ok) {
-                //console.log(response)
                 throw new Error("Network response was not ok: " + response.statusText);
               }
               return response.text();
             })
             .then(data => {
               localStorage.setItem("rdfData", data);
-              processRDFData(data, sourceUrl, "text/turtle")
+              processRDFData(data, sourceUrl, "text/turtle");
             })
             .catch(err => {
               console.error("Error fetching RDF file from source URL:", err);
             });
         }
       }
-      // Load RDF data from URL parameters (source for file, sparql for SPARQL endpoint).
       function loadFromURLParameters() {
         const params = new URLSearchParams(window.location.search);
         const sourceUrl = params.get("source");
         const sparqlUrl = params.get("sparql");
-
         if (sourceUrl) {
           loadFromURL(sourceUrl);
         }
-
         if (sparqlUrl) {
           const sparqlQuery = params.get("query") || "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o } LIMIT 100";
           fetchWithTimeout(sparqlUrl, {
@@ -772,14 +1127,13 @@
               return response.text();
             })
             .then(data => {
-              processRDFData(data, sourceUrl, "text/turtle")
+              processRDFData(data, sourceUrl, "text/turtle");
             })
             .catch(err => {
               console.error("Error fetching SPARQL data from URL parameter:", err);
             });
         }
       }
-
       function processRDFData(rdfData, baseUrl, contentType) {
         worker.postMessage({
           action: "parse",
@@ -788,622 +1142,146 @@
           contentType: contentType,
         });
       }
-
       worker.onmessage = function (event) {
         if (event.data.status === "success") {
-          graphData=event.data.graphData;
-          console.log(graphData)
+          graphData = event.data.graphData;
+          console.log(graphData);
           renderNetwork();
         } else if (event.data.status === "error") {
           showError("Error processing RDF: " + event.data.error);
         }
       };
-      
 
-      function updateLegend(prefixColorMapping) {
-        var legendContainer = document.getElementById("legendList");
-        legendContainer.innerHTML = ""; // Clear previous legend
-    
-        for (const prefix in prefixColorMapping) {
-            if (prefixColorMapping.hasOwnProperty(prefix)) {
-                const { uri, color } = prefixColorMapping[prefix];
-
-                const rowItem = document.createElement("div");
-                rowItem.classList.add("row");
-                
-                const leftContainer = document.createElement("div");
-                leftContainer.classList.add("col-12", "col-md-3");
-    
-                const colorBox = document.createElement("span");
-                colorBox.classList.add("legend-color");
-                colorBox.style.backgroundColor = color;
-                colorBox.style.width = "15px";
-                colorBox.style.height = "15px";
-                colorBox.style.display = "inline-block";
-                colorBox.style.marginRight = "10px";
-                colorBox.style.border = "1px solid #000";
-    
-                const prefixLabel = document.createElement("span");
-                prefixLabel.innerText = prefix;
-                prefixLabel.classList.add("fw-bold", "legend-prefix");
-    
-                leftContainer.appendChild(colorBox);
-                leftContainer.appendChild(prefixLabel);
-                rowItem.appendChild(leftContainer);
-    
-                const uriText = document.createElement("div");
-                uriText.innerText = uri;
-                uriText.classList.add("col-12", "col-md-9", "text-muted", "small","legend-text");
-
-                rowItem.appendChild(uriText);
-                
-                legendContainer.appendChild(rowItem);
-            }
-        }
-      }
-
-      function initializeNetwork() {
-        const configBoxContent = document.getElementById("configBoxContent");
-        configBoxContent.innerHTML = '';
-        confoptions= {
-          configure: {
-            enabled: true,
-            filter: ["physics"],
-            showButton: false,
-            container: configBoxContent
-          },
-        },
-        network = new vis.Network(document.getElementById("graphContainer"), { nodes: new vis.DataSet({}), edges: new vis.DataSet({}) }, confoptions);
-        //options = {
-          //...config.visNetwork,
-          //...confoptions
-        //};
-        //network.setOptions(config.visNetwork);
-      }
-      function showedgelabels(hidden=false){
-        if (hidden) {
-          network.body.data.edges.forEach(function (edge) {
-            edge.label = "";
-          });
-        } else {
-          network.body.data.edges.forEach(function (edge) {
-            edge.label = edge.baseLabel;
-          });
-        }
-      }
-      function getNetworkNodes(hideIsolated=false, simpleNodeLabels=true) {
-        if (hideIsolated) {
-          var connectedIds = new Set();
-          graphData.network.edges.forEach(function (edge) {
-            connectedIds.add(edge.from);
-            connectedIds.add(edge.to);
-          });
-          networkNodes = new vis.DataSet(graphData.network.nodes.filter(function (n) { return connectedIds.has(n.id); }));
-        } else {
-          networkNodes = new vis.DataSet(graphData.network.nodes);
-        }
-        networkNodes.forEach(function (node) {
-					node.size = currentNodeRadius;
-          networkNodes.update(node);
-				});
-        if (simpleNodeLabels) {
-          networkNodes.forEach(function (node) {
-            if (node.type !== 'Literal') {
-              node.label = node.rdfsLabel + '[-]';
-              node.baseLabel = node.rdfsLabel + '[-]';
-              networkNodes.update(node);
-            }
-          });
-        }
-        return networkNodes
-      }
-			// Render network with options.
-			function renderNetwork(cluster=true) {
-        //console.log("renderNetwork")
-        var nodes = {};
-        var connections = {};
-        
-        networkNodes= getNetworkNodes(config.hideIsolatedNodes,config.simpleNodeLabels)
-				networkEdges = new vis.DataSet(graphData.network.edges);
-        showedgelabels(!config.displayEdgeLabels)
-        
-				network.setData({ nodes: networkNodes, edges: networkEdges });
-        if (cluster) {
-          // Apply clustering based on subject and predicate grouping
-          applyClusteringByHubsize();
-          //applyClusteringBySubjectPredicate();
-        }
-        // Helper function: re-cluster based on incoming connections grouped by (from, baseLabel)
-        function reClusterIncoming(nodeId) {
-          // Verify the node exists; if not, open the cluster and exit.
-          clusterSpecificNodeByHubsize(nodeId,hubsize=3);
-        }
-
-        // Update right-click (context menu) listener to use getNodeAt and call reClusterIncoming.
-        network.on("oncontext", function (params) {
-          // Prevent the default browser context menu.
-          params.event.preventDefault();
-          // Determine the node under the pointer using DOM coordinates.
-          const pointer = params.pointer.DOM;
-          const nodeId = network.getNodeAt(pointer);
-          if (nodeId) {
-            if (network.isCluster(nodeId)) {
-              // Optionally open the cluster if a cluster node is right-clicked.
-              network.openCluster(nodeId);
-            } else {
-              // Re-cluster based on incoming connections for the selected node.
-              reClusterIncoming(nodeId);
-            }
+      /**********************
+       * Event Bindings
+       **********************/
+      function bindInputEvents() {
+        document.getElementById("fileInputRadio").addEventListener("change", () => {
+          document.getElementById("fileSection").style.display = "block";
+          document.getElementById("sparqlSection").style.display = "none";
+        });
+        document.getElementById("sparqlInputRadio").addEventListener("change", () => {
+          document.getElementById("fileSection").style.display = "none";
+          document.getElementById("sparqlSection").style.display = "block";
+        });
+        document.getElementById("loadFileButton").addEventListener("click", () => {
+          clearError();
+          const fileInput = document.getElementById("fileInput");
+          if (fileInput.files.length === 0) {
+            showError("Please select a file.");
+            return;
           }
-        });
-
-
-				network.on("doubleClick", function (params) {
-          if (params.nodes.length === 1) {
-            const nodeId = params.nodes[0];
-            if (network.isCluster(nodeId)) {
-              network.openCluster(nodeId);
-            } else {
-              toggleNode(nodeId);
-            }
-          }
-        });
-        updateLegend(graphData.prefixColorMapping)
-			}
-      
-      function applyClusteringByHubsize() {
-        var clusterOptionsByData = {
-          processProperties: function (clusterOptions, childNodes, childEdges) {
-            clusterOptions.label = childNodes[0].baseLabel + "\n(and "+ childNodes.length + " others)";
-            clusterOptions.shape = "circle";
-            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
-            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
-            clusterOptions.repNode = childNodes[0];
-            return clusterOptions;
-          },
-          clusterNodeProperties: {
-            borderWidth: 3,
-            shape: "circle",
-            //font: { size: 30 },
-          },
-        };
-        network.clusterByHubsize(undefined, clusterOptionsByData);
-      }
-      function clusterSpecificNodeByHubsize(nodeId, hubsize) {
-        // Retrieve the node data
-        const nodeData = network.body.data.nodes.get(nodeId);
-        if (!nodeData) {
-          console.error(`Node with id ${nodeId} not found.`);
-          return;
-        }
-      
-        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
-          var edge = network.body.data.edges.get(edgeId);
-          if (edge){
-            return edge.from === nodeId; // Only include edges where edge.from == nodeId
-          }
-        });
-
-        // If no outgoing edges exist, do not perform clustering
-        if (outgoingEdgeIds.length === 0) {
-          console.log(`Node ${nodeId} has no outgoing connections to form a cluster.`);
-          return;
-        }
-        var outgoingNodeIds = outgoingEdgeIds.map(function(edgeId) {
-          var edge = network.body.data.edges.get(edgeId);
-          return edge.to; // Get the 'to' property of the edge
-        });
-        
-        // Check if the number of connected nodes meets the hubsize requirement
-        if (outgoingNodeIds.length < hubsize) {
-          console.log(
-            `Node ${nodeId} does not have enough connections to form a cluster (required: ${hubsize}, found: ${outgoingNodeIds.length}).`
-          );
-          return;
-        }
-      
-        // Define a join condition that includes the specific node and its connected nodes
-        const joinCondition = (nodeOptions) => {
-          return nodeOptions.id === nodeId || outgoingNodeIds.includes(nodeOptions.id);
-        };
-      
-        // Cluster the nodes using the join condition; customize the cluster node properties as needed
-        network.cluster({
-          joinCondition: joinCondition,
-          processProperties: function (clusterOptions, childNodes, childEdges) {
-            clusterOptions.label = nodeData.baseLabel + "\n(and "+ childNodes.length + " others)";
-            clusterOptions.shape = "circle";
-            clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
-            clusterOptions.title = "Cluster of " + childNodes.length + " nodes and  " + childEdges.length + " edges";
-            clusterOptions.repNode = nodeData;
-            return clusterOptions;
-          },
-          clusterNodeProperties: {
-            borderWidth: 3,
-            shape: "circle",
-            //font: { size: 30 },
-          },
-        });
-      }
-      
-      function applyClusteringBySubjectPredicate() {
-        // Group by subject + predicate
-        let clusters = {};
-        networkEdges.get().forEach(edge => {
-          if (!edge.baseLabel) return;
-          // Skip predicates that we want to exclude
-          if (excludePredicatestoCluster.some(pred => edge.baseLabel.includes(pred))) return;
-          const key = edge.from + "|" + edge.baseLabel;
-          if (!clusters[key]) {
-            clusters[key] = { subject: edge.from, predicate: edge.baseLabel, inconn: new Set(), nodesIds: new Set() };
-          }
-          clusters[key].nodesIds.add(edge.to);
-        });
-        
-        // For each group, cluster if the number of object nodes exceeds the threshold
-        Object.keys(clusters).forEach(key => {
-          const clusterData = clusters[key];
-          const nodesIds = Array.from(clusterData.nodesIds);
-          if (nodesIds.length > clusteringThreshold) {
-            //hide all childNodes,except first one
-            //nodesIds.forEach( nodeId => collapseNode(nodeId));
-            const clusterOptions = {
-              joinCondition: function (nodeOptions) {
-                // Include the node if its id is in our objectIds list.
-                return nodesIds.indexOf(nodeOptions.id) !== -1;
-              },
-              processProperties: function (clusterOptions, childNodes, childEdges) {
-                clusterOptions.label = childNodes[0].baseLabel + "\n(and "+ childNodes.length + " others)";
-                clusterOptions.shape = "circle";
-                clusterOptions.color = { background: '#4CAF50', border: '#388E3C' };
-                clusterOptions.title = "Cluster of nodes with predicate: " + clusterData.predicate + " from subject: " + clusterData.subject;
-                clusterOptions.repNode = childNodes[0];
-                return clusterOptions;
-              },
-              clusterNodeProperties: { id: 'cluster:' + key, borderWidth: 3, shape: 'circle' }
-            };
-            network.cluster(clusterOptions);
-          }
-        });
-      }
-      
-			// Toggle node expansion/collapse
-			function toggleNode(nodeId) {
-        const node = network.body.data.nodes.get(nodeId);
-        if (!node) return;
-
-        if (node.expanded) {
-          collapseNode(nodeId);
-        } else {
-          expandNode(nodeId);
-        }
-      }
-      function collapseEdge(edgeId) {
-        var edge = network.body.data.edges.get(edgeId);
-        if (edge) {
-          var fromNodeId = edge.from;
-          var toNodeId = edge.to;
-  
-          // Hide the edge
-          network.body.data.edges.update({ id: edgeId, hidden: true });
-  
-          // Check if the connected node has other visible incoming edges
-          var incomingEdges = network.getConnectedEdges(toNodeId).filter(function(eid) {
-            var e = network.body.data.edges.get(eid);
-            if (e) {
-              return e.to === toNodeId && !e.hidden && e.from !== fromNodeId;
-            }
-          });
-          // Check if the connected node is expanded before collapsing
-          if (incomingEdges.length === 0) {
-            // Collapse the node
-            // Mark as collapsed
-            network.body.data.nodes.update({
-              id: toNodeId,
-              hidden: true
-             });
-            // Recursively collapse the connected node
-            //collapseNode(toNodeId);
-          }
-        }
-      }
-      
-      function collapseNode(nodeId) {
-        // Fetch all outgoing edges from this node
-        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
-          var edge = network.body.data.edges.get(edgeId);
-          if (edge){
-            return edge.from === nodeId; // Only include edges where edge.from == nodeId
-          }
-        });
-        outgoingEdgeIds.forEach((edgeId) => collapseEdge(edgeId));
-        var node = network.body.data.nodes.get(nodeId);
-        network.body.data.nodes.update({
-          id: nodeId,
-          label: node.label.replace('[-]', '[+]'),
-          expanded: false
-         });
-      }
-      function expandNode(nodeId) {
-        // Fetch all outgoing edges from this node
-        var outgoingEdgeIds = network.getConnectedEdges(nodeId).filter(function(edgeId) {
-          var edge = network.body.data.edges.get(edgeId);
-          if (edge) {
-            return edge.from === nodeId; // Only include edges where edge.from == nodeId
-          }
-        });
-        outgoingEdgeIds.forEach(function(edgeId) {
-          var edge = network.body.data.edges.get(edgeId);
-          network.body.data.edges.update({ id: edgeId, hidden: false });
-          // Show the connected node
-          var connectedNodeId = edge.to;
-          network.body.data.nodes.update({
-            id: connectedNodeId,
-            hidden: false
-           });
-        });
-        var node = network.body.data.nodes.get(nodeId);
-        network.body.data.nodes.update({
-          id: nodeId,
-          label: node.label.replace('[+]', '[-]'),
-          expanded: true,
-         });
-      }
-      function openAllClusters(network) {
-        let clusters = Object.keys(network.body.nodes).filter(nodeId => {
-            return network.isCluster(nodeId);
-        });
-    
-        clusters.forEach(clusterId => {
-            network.openCluster(clusterId);
-        });
-      }
-			// Export SVG helper function for element creation.
-			function createSvgElement(tag, attrs) {
-				var elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
-				for (var key in attrs) {
-					elem.setAttribute(key, attrs[key]);
-				}
-				return elem;
-			}
-
-			// Export current view as SVG.
-			function exportSVG() {
-				const container = document.getElementById("graphContainer");
-				const width = container.clientWidth;
-				const height = container.clientHeight;
-				const svgNS = "http://www.w3.org/2000/svg";
-				const svgElem = createSvgElement("svg", { width: width, height: height, xmlns: svgNS });
-				const defs = createSvgElement("defs", {});
-				const marker = createSvgElement("marker", {
-					id: "arrow",
-					markerWidth: "10",
-					markerHeight: "10",
-					refX: "10",
-					refY: "3",
-					orient: "auto",
-					markerUnits: "strokeWidth"
-				});
-				const arrowPath = createSvgElement("path", { d: "M0,0 L0,6 L9,3 z", fill: "#000" });
-				marker.appendChild(arrowPath);
-				defs.appendChild(marker);
-				svgElem.appendChild(defs);
-				const positions = network.getPositions();
-				networkEdges.get().forEach(function (edge) {
-					if (edge.hidden) return;
-					const fromPos = positions[edge.from];
-					const toPos = positions[edge.to];
-					if (!fromPos || !toPos) return;
-					const line = createSvgElement("line", {
-						x1: fromPos.x,
-						y1: fromPos.y,
-						x2: toPos.x,
-						y2: toPos.y,
-						stroke: "#000",
-						"stroke-width": "2",
-						"marker-end": "url(#arrow)"
-					});
-					svgElem.appendChild(line);
-					if (document.getElementById("displayEdgeLabels").checked && edge.label) {
-						const midX = (fromPos.x + toPos.x) / 2;
-						const midY = (fromPos.y + toPos.y) / 2;
-						const text = createSvgElement("text", {
-							x: midX,
-							y: midY,
-							"font-size": "10",
-							fill: "#000",
-							"text-anchor": "middle"
-						});
-						text.textContent = shortenLabel(edge.label);
-						svgElem.appendChild(text);
-					}
-				});
-				networkNodes.get().forEach(function (node) {
-					if (node.hidden) return;
-					const pos = positions[node.id];
-					if (!pos) return;
-					if (node.shape === "circle") {
-						const radius = node.size || currentNodeRadius;
-						const circle = createSvgElement("circle", {
-							cx: pos.x,
-							cy: pos.y,
-							r: radius,
-							fill: node.color && node.color.background ? node.color.background : "#CCCCCC",
-							stroke: node.color && node.color.border ? node.color.border : "#000",
-							"stroke-width": "2"
-						});
-						svgElem.appendChild(circle);
-					} else {
-						const rect = createSvgElement("rect", {
-							x: pos.x - currentNodeRadius,
-							y: pos.y - currentNodeRadius,
-							width: currentNodeRadius * 2,
-							height: currentNodeRadius * 2,
-							fill: node.color && node.color.background ? node.color.background : "#CCCCCC",
-							stroke: node.color && node.color.border ? node.color.border : "#000",
-							"stroke-width": "2"
-						});
-						svgElem.appendChild(rect);
-					}
-					const text = createSvgElement("text", {
-						x: pos.x,
-						y: pos.y + 4,
-						"font-size": currentFontSize,
-						fill: "#000",
-						"text-anchor": "middle"
-					});
-					text.textContent = nodeState[node.id] ? nodeState[node.id].baseLabel : node.label;
-					svgElem.appendChild(text);
-				});
-				const legend = document.getElementById("legend");
-				const legendRect = legend.getBoundingClientRect();
-				const graphRect = document.getElementById("graphContainer").getBoundingClientRect();
-				const legendGroup = createSvgElement("g", {});
-				legendGroup.setAttribute("transform", `translate(${legendRect.left - graphRect.left}, ${legendRect.top - graphRect.top})`);
-				const legendBg = createSvgElement("rect", {
-					x: 0,
-					y: 0,
-					width: legendRect.width,
-					height: legendRect.height,
-					fill: "#fff",
-					stroke: "#000"
-				});
-				legendGroup.appendChild(legendBg);
-				const legendItems = document.getElementById("legendList").children;
-				for (let i = 0; i < legendItems.length; i++) {
-					const item = legendItems[i];
-					const color = item.querySelector(".legend-color").style.background;
-					const prefix = item.querySelector("strong").innerText;
-					let ns = "";
-					for (const k in knownPrefixes) {
-						const displayKey = (k === "" ? "base" : k);
-						if (displayKey === prefix) {
-							ns = knownPrefixes[k];
-							break;
-						}
-					}
-					const colorRect = createSvgElement("rect", {
-						x: 5,
-						y: 5 + i * 25,
-						width: 15,
-						height: 15,
-						fill: color,
-						stroke: "#000"
-					});
-					legendGroup.appendChild(colorRect);
-					const prefixText = createSvgElement("text", {
-						x: 25,
-						y: 17 + i * 25,
-						"font-size": "10",
-						fill: "#000"
-					});
-					prefixText.textContent = prefix;
-					legendGroup.appendChild(prefixText);
-					const nsText = createSvgElement("text", {
-						x: 5,
-						y: 25 + i * 25,
-						"font-size": "8",
-						fill: "#555"
-					});
-					nsText.textContent = ns;
-					legendGroup.appendChild(nsText);
-				}
-				svgElem.appendChild(legendGroup);
-				const serializer = new XMLSerializer();
-				const svgString = serializer.serializeToString(svgElem);
-				const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-				const url = URL.createObjectURL(blob);
-				const downloadLink = document.createElement("a");
-				downloadLink.href = url;
-				downloadLink.download = "graph.svg";
-				document.body.appendChild(downloadLink);
-				downloadLink.click();
-				document.body.removeChild(downloadLink);
-			}
-
-      document.getElementById("loadFileButton").addEventListener("click", function () {
-        clearError();
-        const fileInput = document.getElementById("fileInput");
-        if (fileInput.files.length === 0) {
-          showError("Please select a file.");
-          return;
-        }
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onerror = function (e) {
-          showError("Error reading file: " + e.target.error.message);
-        };
-        reader.onload = function (e) {
-          const data = e.target.result;
-          localStorage.setItem("rdfData", data);
-          processRDFData(data, "http://file.local/", "text/turtle");
-        };
-        reader.readAsText(file);
-      });
-    
-      document.getElementById("loadFileUrlButton").addEventListener("click", function () {
-        clearError();
-        const fileUrl = document.getElementById("fileUrlInput").value.trim();
-        if (!fileUrl) {
-          showError("Please enter a file URL.");
-          return;
-        }
-        fetch(fileUrl)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error("Network error: " + response.statusText);
-            }
-            return response.text();
-          })
-          .then(data => {
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          reader.onerror = (e) => showError("Error reading file: " + e.target.error.message);
+          reader.onload = (e) => {
+            const data = e.target.result;
             localStorage.setItem("rdfData", data);
-            processRDFData(data, fileUrl, "text/turtle");
+            processRDFData(data, "http://file.local/", "text/turtle");
+          };
+          reader.readAsText(file);
+        });
+        document.getElementById("loadFileUrlButton").addEventListener("click", () => {
+          clearError();
+          const fileUrl = document.getElementById("fileUrlInput").value.trim();
+          if (!fileUrl) {
+            showError("Please enter a file URL.");
+            return;
+          }
+          fetch(fileUrl)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Network error: " + response.statusText);
+              }
+              return response.text();
+            })
+            .then(data => {
+              localStorage.setItem("rdfData", data);
+              processRDFData(data, fileUrl, "text/turtle");
+            })
+            .catch(err => showError("Error fetching RDF file: " + err.message));
+        });
+        document.getElementById("loadSparqlButton").addEventListener("click", () => {
+          clearError();
+          const endpointUrl = document.getElementById("endpointUrl").value.trim();
+          const query = document.getElementById("sparqlQuery").value.trim();
+          if (!endpointUrl || !query) {
+            showError("Please provide both an endpoint URL and a SPARQL query.");
+            return;
+          }
+          fetch(endpointUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/sparql-query", "Accept": "text/turtle" },
+            body: query,
           })
-          .catch(err => {
-            showError("Error fetching RDF file: " + err.message);
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Network error: " + response.statusText);
+              }
+              return response.text();
+            })
+            .then(data => processRDFData(data, endpointUrl, "text/turtle"))
+            .catch(err => showError("Error fetching SPARQL data: " + err.message));
+        });
+        document.getElementById("layoutType").addEventListener("change", () => {
+          const layoutType = document.getElementById("layoutType").value;
+          config.visNetwork.layout.hierarchical.enabled = (layoutType === "hierarchical");
+          config.layoutType = layoutType;
+          network.setOptions(config.visNetwork);
+          saveConfigOptions(config);
+        });
+        document.getElementById("connectionStyle").addEventListener("change", () => {
+          var connectionStyle = document.getElementById("connectionStyle").value;
+          var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
+          config.connectionStyle = connectionStyle;
+          config.visNetwork.edges = { smooth: smoothOption };
+          saveConfigOptions(config);
+          renderNetwork();
+        });
+        document.getElementById("hideIsolatedNodes").addEventListener("change", () => {
+          config.hideIsolatedNodes = document.getElementById("hideIsolatedNodes").checked;
+          saveConfigOptions(config);
+          renderNetwork();
+        });
+        document.getElementById("simpleNodeLabels").addEventListener("change", () => {
+          config.simpleNodeLabels = document.getElementById("simpleNodeLabels").checked;
+          saveConfigOptions(config);
+          renderNetwork();
+        });
+        document.getElementById("displayEdgeLabels").addEventListener("change", () => {
+          config.displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
+          saveConfigOptions(config);
+          renderNetwork();
+        });
+        document.getElementById("disableImprovedLayout").addEventListener("change", () => {
+          config.disableImprovedLayout = document.getElementById("disableImprovedLayout").checked;
+          config.visNetwork.layout.improvedLayout = !document.getElementById("disableImprovedLayout").checked;
+          saveConfigOptions(config);
+          renderNetwork();
+        });
+        document.getElementById("expandAllButton").addEventListener("click", () => {
+          openAllClusters(network);
+          const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
+          collapsedNodes.forEach(node => {
+            expandNode(node.id);
+            network.body.data.nodes.update({ id: node.id, label: node.baseLabel + " [-]" });
+            node.expanded = true;
           });
-      });
-    
-      document.getElementById("loadSparqlButton").addEventListener("click", function () {
-        clearError();
-        const endpointUrl = document.getElementById("endpointUrl").value.trim();
-        const query = document.getElementById("sparqlQuery").value.trim();
-        if (!endpointUrl || !query) {
-          showError("Please provide both an endpoint URL and a SPARQL query.");
-          return;
-        }
-        fetch(endpointUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/sparql-query", "Accept": "text/turtle" },
-          body: query,
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error("Network error: " + response.statusText);
-            }
-            return response.text();
-          })
-          .then(data => {
-            processRDFData(data, endpointUrl, "text/turtle");
-          })
-          .catch(err => {
-            showError("Error fetching SPARQL data: " + err.message);
-          });
-      });
-    
-      window.onload = function () {
-        initializeNetwork();
-        clearError();
-        config=loadConfigOptions()
-        network.setOptions(config.visNetwork);
-        saveConfigOptions(config);
-        const savedData = localStorage.getItem("rdfData");
-        if (savedData) {
-          processRDFData(savedData, "http://example.org/", "text/turtle");
-        }
-      };
-      
-      const configBoxContent = document.getElementById("configBoxContent");
+        });
+        document.getElementById("resetViewButton").addEventListener("click", () => {
+          if (network) network.fit();
+        });
+        document.getElementById("exportSVGButton").addEventListener("click", () => exportSVG());
+        document.getElementById("exportDOTButton").addEventListener("click", () => exportDOT());
+        // Config box change events
+        const configBoxContent = document.getElementById("configBoxContent");
+        configBoxContent.addEventListener("change", updateOptions);
+        configBoxContent.addEventListener("mouseup", function(e) {
+          if (e.target && e.target.matches('input[type="range"]')) {
+            updateOptions();
+          }
+        });
+      }
       function updateOptions() {
         const visoptions = {
           ...config.visNetwork,
@@ -1412,109 +1290,25 @@
         config.visNetwork = visoptions;
         saveConfigOptions(config);
       }
-      
-      // Listen for change events (covers select changes and some range updates)
-      configBoxContent.addEventListener("change", updateOptions);
-      
-      // Listen for mouseup events specifically on range inputs
-      configBoxContent.addEventListener("mouseup", function(e) {
-        if (e.target && e.target.matches('input[type="range"]')) {
-          updateOptions();
-        }
-      });
 
-      document.getElementById("layoutType").addEventListener("change", function() {
-        const layoutType = document.getElementById("layoutType").value;
-				if (layoutType === "hierarchical" ) {
-          config.visNetwork.layout.hierarchical.enabled=true;
-        } else {
-          config.visNetwork.layout.hierarchical.enabled=false;
-        }
-        config.layoutType=layoutType;
+      /**********************
+       * Main Initialization
+       **********************/
+      window.onload = function () {
+        initUIControls();
+        initDraggableCards();
+        initializeNetwork();
+        clearError();
+        config = loadConfigOptions();
         network.setOptions(config.visNetwork);
         saveConfigOptions(config);
-        //renderNetwork();
-      });
-    
-      document.getElementById("connectionStyle").addEventListener("change", function() {
-        var connectionStyle = document.getElementById("connectionStyle").value;
-				var smoothOption = connectionStyle === "curved" ? { enabled: true, type: "continuous" } : false;
-        config.connectionStyle=connectionStyle;
-        config.visNetwork.edges={ smooth: smoothOption};
-        saveConfigOptions(config);
-        renderNetwork();
-      });
-    
-      document.getElementById("hideIsolatedNodes").addEventListener("change", function() {
-        config.hideIsolatedNodes = document.getElementById("hideIsolatedNodes").checked;
-        saveConfigOptions(config);
-        renderNetwork();
-      });
-      document.getElementById("simpleNodeLabels").addEventListener("change", function() {
-        config.simpleNodeLabels = document.getElementById("simpleNodeLabels").checked;
-        saveConfigOptions(config);
-        renderNetwork();
-      });
-      
-      document.getElementById("displayEdgeLabels").addEventListener("change", function() {
-        config.displayEdgeLabels = document.getElementById("displayEdgeLabels").checked;
-        saveConfigOptions(config);
-        renderNetwork();
-      });
-    
-      document.getElementById("disableImprovedLayout").addEventListener("change", function() {
-        config.disableImprovedLayout = document.getElementById("disableImprovedLayout").checked
-        config.visNetwork.layout.improvedLayout=!document.getElementById("disableImprovedLayout").checked;
-        saveConfigOptions(config);
-        renderNetwork();
-      });
-
-      
-			document.getElementById("expandAllButton").addEventListener("click", function () {
-        openAllClusters(network);
-        const collapsedNodes = graphData.network.nodes.filter(node => node.expanded === false);
-        collapsedNodes.forEach(node => {
-          expandNode(node.id);
-          network.body.data.nodes.update({ id: node.id, label: node.baseLabel + " [-]" });
-          node.expanded=true;
-        });
-      });
-
-			document.getElementById("resetViewButton").addEventListener("click", function () {
-				if (network) network.fit();
-			});
-
-			document.getElementById("exportSVGButton").addEventListener("click", function () {
-				exportSVG();
-			});
-      document.getElementById("exportDOTButton").addEventListener("click", function () {
-				exportDOT();
-			});
-
-      function exportDOT() {
-        let dotStr = "digraph G {\n";
-        networkNodes.get().forEach(node => {
-            // Extract the text between <b></b> tags using regex
-            const labelMatch = node.label.match(/<b>(.*?)<\/b>/);
-            const labelText = labelMatch ? labelMatch[1] : node.label; // Fallback to original label if no match
-            dotStr += `  "${node.id}" [label="${labelText}"];\n`;
-        });
-        networkEdges.get().forEach(edge => {
-            // Only include a label if available
-            const label = edge.label ? ` [label="${edge.label}"]` : "";
-            dotStr += `  "${edge.from}" -> "${edge.to}"${label};\n`;
-        });
-        dotStr += "}\n";
-    
-        const blob = new Blob([dotStr], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const downloadLink = document.createElement("a");
-        downloadLink.href = url;
-        downloadLink.download = "graph.dot";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      }
-		</script>
-	</body>
+        bindInputEvents();
+        loadFromURLParameters();
+        const savedData = localStorage.getItem("rdfData");
+        if (savedData) {
+          processRDFData(savedData, "http://example.org/", "text/turtle");
+        }
+      };
+    </script>
+  </body>
 </html>

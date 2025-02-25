@@ -147,9 +147,6 @@ function shortenURI(uri, prefixMapping) {
     return label;
   }
 
-function NodeTitle(title, subtitle) {
-  return "<b>" + title + "</b>" + (subtitle ? "\n" + subtitle : "");
-}
 
 function buildGraphFromStore(store, prefixMapping) {
   var nodesMap = {};
@@ -161,19 +158,14 @@ function buildGraphFromStore(store, prefixMapping) {
     const objId = st.object.termType === 'Literal' ? null : getNodeId(st.object);
     // Handle rdfs:label
     if (pred.endsWith('rdf-schema#label')) {
-      const label=NodeTitle(shortenLabel(subjId,prefixMapping), st.object.value);
       if (!nodesMap[subjId]) {
         nodesMap[subjId] = {
           id: subjId,
           iri: subjId,
           rdfsLabel: st.object.value,
-          label: label + ' [-]',
-          shape: 'box',
-          expanded: true,
-          baseLabel: label
+          shortIRI: shortenLabel(subjId,prefixMapping)
         };
       } else {
-        nodesMap[subjId].label = label + ' [-]';
         nodesMap[subjId].rdfsLabel= st.object.value;
       }
       return;
@@ -181,15 +173,11 @@ function buildGraphFromStore(store, prefixMapping) {
     // Handle rdf:type
     if (pred === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
       if (!nodesMap[subjId]) {
-        const label=NodeTitle(shortenLabel(subjId,prefixMapping));
         nodesMap[subjId] = {
           id: subjId,
           iri: subjId,
-          label: label + ' [-]',
-          shape: 'box',
           type: shortenURI(st.object.value,prefixMapping),
-          expanded: true,
-          baseLabel: label
+          shortIRI: shortenLabel(subjId,prefixMapping)
         };
       } else {
         nodesMap[subjId].type = shortenURI(st.object.value,prefixMapping);
@@ -198,14 +186,11 @@ function buildGraphFromStore(store, prefixMapping) {
     }
     // Ensure subject node exists.
     if (!nodesMap[subjId]) {
-      const label=NodeTitle(shortenLabel(subjId,prefixMapping));
       nodesMap[subjId] = {
         id: subjId,
         iri: subjId,
-        label: label + ' [-]',
-        shape: 'box',
-        expanded: true,
-        baseLabel: label
+        rdfsLabel: "",
+        shortIRI: shortenLabel(subjId,prefixMapping)
       };
     }
     // Process object.
@@ -216,20 +201,14 @@ function buildGraphFromStore(store, prefixMapping) {
         id: objNodeId,
         type: "Literal",
         label: st.object.value,
-        shape: 'box',
-        baseLabel: st.object.value
       };
     } else {
       objNodeId = objId;
       if (!nodesMap[objNodeId]) {
-        const label=NodeTitle(shortenLabel(objNodeId,prefixMapping));
         nodesMap[objNodeId] = {
           id: objNodeId,
           iri: objNodeId,
-          label: label + ' [-]',
-          shape: 'box',
-          expanded: true,
-          baseLabel: label
+          shortIRI: shortenLabel(objNodeId,prefixMapping)
         };
       }
     }
@@ -238,7 +217,7 @@ function buildGraphFromStore(store, prefixMapping) {
       from: subjId,
       to: objNodeId,
       label: shortenLabel(pred,prefixMapping),
-      baseLabel: shortenLabel(pred,prefixMapping),
+      shortIRI: shortenLabel(pred,prefixMapping),
       arrows: { to: { enabled: true, type: 'arrow' } }
     });
   });
@@ -271,7 +250,7 @@ function assignColorsToNodes(nodes,prefixMapping) {
       node.color = { background: "#CCCCCC", border: "#000" };
     }
     // Construct a simple tooltip (title) by including properties except for some keys.
-    var excludeKeys = ['shape', 'color', 'label', 'font', "id", "baseLabel", "rdfsLabel"];
+    var excludeKeys = ['shape', 'color', 'label', 'font', "id", "rdfsLabel"];
     var tooltipContent = "";
     for (var key in node) {
       if (excludeKeys.indexOf(key) < 0) {
