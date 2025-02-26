@@ -246,6 +246,7 @@
                 <button id="resetViewButton" class="btn btn-secondary btn-sm">Reset View</button>
                 <button id="exportSVGButton" class="btn btn-secondary btn-sm">Export SVG</button>
                 <button id="exportDOTButton" class="btn btn-secondary btn-sm">Export DOT</button>
+                <button id="saveRdfButton" class="btn btn-secondary btn-sm">Save RDF</button>
               </div>
             </div>
           </div>
@@ -479,6 +480,7 @@
             nodeData.expanded = true;
             nodeSubmitted = true;
             nodeModal.hide();
+            addNodeTriples(nodeData);
             callback(nodeData);
           },
           { once: true }
@@ -534,6 +536,7 @@
               edgeSubmitted = true;
               edgeData.arrows= { to: { enabled: true, type: 'arrow' } };
               edgeModal.hide();
+              addEdgeTriples(edgeData);
               callback(edgeData);
             },
             { once: true }
@@ -1282,6 +1285,7 @@
         });
         document.getElementById("exportSVGButton").addEventListener("click", () => exportSVG());
         document.getElementById("exportDOTButton").addEventListener("click", () => exportDOT());
+        document.getElementById("saveRdfButton").addEventListener("click", saveRDFToFile);
         // Config box change events
         const configBoxContent = document.getElementById("configBoxContent");
         configBoxContent.addEventListener("change", updateOptions);
@@ -1299,6 +1303,95 @@
         config.visNetwork = visoptions;
         saveConfigOptions(config);
       }
+      function saveRDFToFile() {
+        const rdfData = localStorage.getItem("rdfData");
+        
+        if (!rdfData) {
+            console.error("No RDF data found in local storage.");
+            return;
+        }
+    
+        const blob = new Blob([rdfData], { type: 'text/turtle' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        
+        a.href = url;
+        a.download = 'rdfData.ttl'; // Name of the downloaded file
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url); // Clean up the URL object
+      }
+      function addNodeTriples(nodeData) {
+        const rdfData = localStorage.getItem("rdfData");
+        var tempstore = $rdf.graph();
+        $rdf.parse(rdfData, tempstore, graphData.prefixColorMapping['base'].uri, "text/turtle", function(err) {
+            if (err) {
+              console.error("Error parsing RDF: " + err);
+              return;
+            }
+            
+            try {
+                if (nodeData.type) {
+                  tempstore.add(
+                    tempstore.sym(nodeData.iri),
+                    tempstore.sym("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                    tempstore.sym(expandId(nodeData.type))
+                  );
+                }
+                if (nodeData.rdfsLabel) {  
+                  tempstore.add(
+                    tempstore.sym(nodeData.iri),
+                    tempstore.sym("http://www.w3.org/2000/01/rdf-schema#label"),
+                    tempstore.literal(nodeData.rdfsLabel)
+                  );
+                }
+            } catch (ex) {
+                console.error("Error adding node to graph: " + ex);
+                return;
+            }
+    
+            // Serialize and save the updated RDF data
+            $rdf.serialize(null, tempstore, graphData.prefixColorMapping['base'].uri, "text/turtle", function(err, str) {
+                if (err) {
+                    console.error("Error serializing RDF: " + err);
+                    return;
+                }
+                localStorage.setItem("rdfData", str);
+            });
+        });
+      }
+      function addEdgeTriples(edgeData) {
+        const rdfData = localStorage.getItem("rdfData");
+        var tempstore = $rdf.graph();
+        $rdf.parse(rdfData, tempstore, graphData.prefixColorMapping['base'].uri, "text/turtle", function(err) {
+            if (err) {
+              console.error("Error parsing RDF: " + err);
+              return;
+            }
+            
+            try {
+              tempstore.add(
+                  tempstore.sym(edgeData.from),
+                  tempstore.sym(expandId(edgeData.shortIRI)),
+                  tempstore.sym(edgeData.to)
+                );
+            } catch (ex) {
+                console.error("Error adding edge to graph: " + ex);
+                return;
+            }
+    
+            // Serialize and save the updated RDF data
+            $rdf.serialize(null, tempstore, graphData.prefixColorMapping['base'].uri, "text/turtle", function(err, str) {
+                if (err) {
+                    console.error("Error serializing RDF: " + err);
+                    return;
+                }
+                localStorage.setItem("rdfData", str);
+            });
+        });
+      }
+      
 
       /**********************
        * Main Initialization
